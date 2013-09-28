@@ -7,6 +7,11 @@
   (defonce ^:dynamic *world*   (ref {}))
   (defonce ^:dynamic *players* (ref #{})))
 
+(defn add-room! [room]
+  (dosync
+   (alter *world* #(assoc % (:name room) room))
+   (println *world*))
+
 (defn add-player! [player-map]
   (dosync
    (alter *players* #(conj % player-map))
