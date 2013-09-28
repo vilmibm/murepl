@@ -5,6 +5,7 @@ Preamble:
 * *all* calls signed with an auth sig (usename+password in base64. for
   convenience, not security)
 * All HTTP because it's just a demo
+* Uses compiler-as-a-service but keeps a local cache of compilations
 
 
 # Commands, REST API and Events
@@ -26,7 +27,7 @@ auth: moves current player in specified direction.
 ## look
 GET _/look_
 
-information about current room  
+information about current room
 
 auth: shows information about room invoking user is in
 
