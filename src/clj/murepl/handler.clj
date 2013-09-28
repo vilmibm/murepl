@@ -16,9 +16,7 @@
 
   ;; CLJS compilation
   (POST "/api/v1/compile" [expr]
-        (let [response (himera/generate-js-response (cljs/compilation expr :simple false))]
-              (prn response)
-              response))
+        (himera/generate-js-response (cljs/compilation expr :simple false)))
 
   ;; Rooms
   (POST "/api/v1/move/:direction" [direction] 200)
