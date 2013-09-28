@@ -1,7 +1,7 @@
 (ns murepl.handler
   (:use compojure.core
-        ring.middleware.gzip
-        ring.middleware.json)
+        ring.middleware.clj-params
+        ring.middleware.gzip)
   (:require [compojure.handler     :as handler]
             [compojure.route       :as route  ]
             [himera.server.cljs    :as cljs   ]
@@ -45,5 +45,6 @@
   (route/not-found "four oh four"))
        
 (def app
-  (-> (handler/site api-routes)
+  (-> api-routes
+      (wrap-clj-params)
       (wrap-gzip)))
