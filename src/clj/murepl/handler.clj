@@ -4,40 +4,24 @@
         ring.middleware.gzip)
   (:require [compojure.handler     :as handler]
             [compojure.route       :as route  ]
-            [himera.server.cljs    :as cljs   ]
-            [himera.server.service :as himera ]
             [ring.util.response    :as resp   ]))
+
+(defn build-response [body-map]
+    {:status 200
+     :headers {"Content-Type" "application/clojure; charset=utf-8"}
+     :body (pr-str body-map)})
+  
+
+(defn with-current-user [expr]
+    {:msg (format "You do a thing: %s" (eval expr))})
 
 (defroutes api-routes
   ;; index page. serves up repl
   (GET "/" [] (resp/file-response "index.html" {:root "resources/public"}))
 
-  ;; API routes
-
-  ;; CLJS compilation
-  (POST "/api/v1/compile" [expr]
-        (himera/generate-js-response (cljs/compilation expr :simple false)))
-
-  ;; Rooms
-  (POST "/api/v1/move/:direction" [direction] 200)
-  (GET  "/api/v1/look/" [] 200)
-
-  ;; Object Interaction
-  (POST "/api/v1/take/:obj-id" [obj-id] 200)
-  (POST "/api/v1/drop/:obj-id" [obj-id] 200)
-  (GET  "/api/v1/inventory" [] 200)
-  (POST "/api/v1/use/:obj-id/:verb/:verb-arg" [obj-id verb verb-arg] 200)
-  (GET  "/api/v1/examine/:obj-id" [obj-id] 200)
-
-  ;; Communication
-  (POST "/api/v1/say" [] 200)
-  (POST "/api/v1/yell" [] 200)
-  (POST "/api/v1/whisper" [] 200)
-
-  ;; Scripting
-  (POST "/create-object" [] 200)
-  (POST "/create-room" [] 200)
-  (POST "/create-bot" [] 200)
+  (POST "/eval" [expr]
+        (-> (with-current-user expr)
+            (build-response)))
 
   (route/resources "/")
   (route/not-found "four oh four"))

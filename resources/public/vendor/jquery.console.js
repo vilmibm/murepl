@@ -497,6 +497,7 @@
             inner.append(mesg);
             mesg.show();
         };
+      extern.msg = commandResult;
 
         ////////////////////////////////////////////////////////////////////////
         // Handle normal character insertion

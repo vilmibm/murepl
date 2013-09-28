@@ -19,18 +19,15 @@
             [clojure.walk :as walk]
             [clojure.zip :as zip]))
 
-(def api-prefix "/api/v1")
-(defn api-url [path] (str/join "/" [api-prefix path]))
-
 (defn- map->js [m]
   (let [out (js-obj)]
     (doseq [[k v] m]
       (aset out (name k) v))
     out))
 
-(defn go-compile [code]
+(defn go-eval [code]
   (let [data (atom nil)
-        params (map->js {:url (api-url "compile")
+        params (map->js {:url "/eval"
                          :data (str "{:expr " code "}")
                          :contentType "application/clojure; charset=utf-8"
                          :async false
@@ -38,16 +35,11 @@
                          :dataType "text"
                          :success #(reset! data (reader/read-string %))})]
     (.ajax js/jQuery params)
+    (.log js/console @data)
     @data))
 
 (defn- on-validate [input]
   (not (empty? input)))
-
-(defn- build-msg 
-  [title msg klass]
-  (array
-   (map->js {:msg (str title msg)
-             :className klass})))
 
 (defn- starts-with? [o s]
   (= (.slice (clojure.string/trim s)
@@ -61,11 +53,12 @@
   (if (is-comment? line)
     (build-msg "" "" "jquery-console-message-value")
     (let [input (.trim js/jQuery line)
-          compiled (go-compile input)]
-      (if-let [err (and compiled (:error compiled))]
+          result (go-eval input)]
+      (.log js/console result)
+      (if-let [err (and result (:error result))]
         (build-msg "Compilation error: " err "jquery-console-message-error")
         (try
-          (build-msg "" (pr-str (js/eval (:js compiled))) "jquery-console-message-value")
+          (:msg result)
           (catch js/Error e
             (build-msg "Compilation error: " e "jquery-console-message-error")))))))
 
@@ -73,13 +66,12 @@
   (.ready (js/jQuery js/document)
           (fn []
             (set! js/controller
-                  (doto (js/jQuery "#console")
-                    (.console (map->js {:welcomeMessage "welcome to murepl."
+                    (.console (js/jQuery "#console") (map->js {:welcomeMessage "welcome to murepl."
                                         :promptLabel "> "
                                         :commandValidate on-validate
                                         :commandHandle on-handle
                                         :autofocus true
                                         :animateScroll true
-                                        :promptHistory true})))))))
+                                        :promptHistory true}))))))
   
   
