@@ -148,13 +148,17 @@ Generate a new object. It goes into user's inventory.
  * defend <object id>
  * heal <object id>
 
-(create-obj
+### Object scripting API
+ * msg _print message to screen_
+ * explode _break, deal a damage_
+ * break _reduce HP to 0_
+
+(create-obj ;; MACRO
   :name "banana peel"
   :desc "The peel of a banana. It's gross and oxidizing."
-  :events {:dropped *TODO* how to script event handlers?}
-  :verbs {:heal *TODO* how to script verb handlers?})
+  :events {:dropped (break), :passed (comp break (partial msg "You slip on a banana peel. It is destroyed. You fall down and suffer damage."))}
 /create-object/
-body: {"name":..., "desc":..., "events":{"dropped": "(cljs)"}, "verbs":{"heal":"(cljs)"}}
+body: {"name":..., "desc":..., "events":{"dropped": "(break)"}}
 >> You created a banana peel. You slip it into your backpack.
 
 ## create-room <args>
@@ -184,7 +188,7 @@ where args are:
  * description
  * event-map
 
-### Bot verbs
+### Bot API
  * say <msg>
  * whisper <msg>
  * yell <msg>
@@ -200,10 +204,10 @@ where args are:
  * :whispered _bot is whispered to_
  * :heard _bot is privy to someone's yell or say command_
 
-(create-bot
+(create-bot ;; MACRO
   :name "Living Statue"
   :desc "This eerie statue glowers at you with moving eyes. It is otherwise still"
-  :events {:passed *TODO* how to handle scripting})
+  :events {:passed (yell "boo")})
 
 /create-bot
 body: {"name": "...", "desc":"...", "events":{"passed": "(cljs)"}}
