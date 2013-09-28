@@ -4,7 +4,6 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/clj"]
-  :main murepl.handler
   :ring {:handler murepl.handler/app}
   :min-lein-version "2.0.0"
   :plugins [[lein-cljsbuild "0.3.3"]
@@ -14,8 +13,7 @@
                  [amalloy/ring-gzip-middleware "0.1.2"]
                  [compojure "1.1.5"]
                  [himera "0.1.0-SNAPSHOT"]
-                 [ring/ring-json "0.2.0"]
-                 [ring-server "0.2.8"]]
+                 [ring/ring-json "0.2.0"]]
   :cljsbuild {:builds [{:source-paths ["src/cljs"]
                         :compiler {:output-dir "resources/public/js/"
                                    :output-to "resources/public/js/murepl.js"
