@@ -5,7 +5,7 @@
   <script type="text/javascript" src="vendor/jquery.console.js"></script>
   <script type="text/javascript" src="js/murepl.js"></script>
   <script type="text/javascript">
-    goog.require('himera.client.repl');
+    goog.require('murepl.console');
   </script>
   <link rel="stylesheet" type="text/css" href="stylesheets/base.css" />
   <link rel="stylesheet" type="text/css" href="stylesheets/layout.css" />
@@ -16,6 +16,7 @@
 <body>
     <div class="console" id="console"></div>
     <script>
+        murepl.console.go();
         goog.require('cljs.core');
         goog.provide('cljs.user');
     </script>

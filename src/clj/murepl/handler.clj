@@ -2,15 +2,23 @@
   (:use compojure.core
         ring.middleware.gzip
         ring.middleware.json)
-  (:require [compojure.handler      :as handler]
-            [compojure.route        :as route  ]
-            [ring.util.response     :as resp   ]))
+  (:require [compojure.handler     :as handler]
+            [compojure.route       :as route  ]
+            [himera.server.cljs    :as cljs   ]
+            [himera.server.service :as himera ]
+            [ring.util.response    :as resp   ]))
 
 (defroutes api-routes
   ;; index page. serves up repl
   (GET "/" [] (resp/file-response "index.html" {:root "resources/public"}))
 
   ;; API routes
+
+  ;; CLJS compilation
+  (POST "/api/v1/compile" [expr]
+        (let [response (himera/generate-js-response (cljs/compilation expr :simple false))]
+              (prn response)
+              response))
 
   ;; Rooms
   (POST "/api/v1/move/:direction" [direction] 200)
