@@ -1,3 +1,12 @@
+Preamble:
+
+* Location is always implied as that is stored on the server.
+* /v1 prefix on all routes
+* *all* calls signed with an auth sig (usename+password in base64. for
+  convenience, not securit).
+* All HTTP because it's just a demo
+
+
 # Commands, REST API and Events
 
 ## go (:north|:south|:up|:down|:west|:east)
