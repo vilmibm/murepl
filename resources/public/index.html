@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script type="text/javascript" src="vendor/jquery-1.4.2.min.js"></script>
+  <script type="text/javascript" src="vendor/jquery.console.js"></script>
+  <script type="text/javascript" src="js/murepl.js"></script>
+  <script type="text/javascript">
+    goog.require('himera.client.repl');
+  </script>
+  <link rel="stylesheet" type="text/css" href="stylesheets/base.css" />
+  <link rel="stylesheet" type="text/css" href="stylesheets/layout.css" />
+  <link rel="stylesheet" type="text/css" href="stylesheets/skeleton.css" />
+  <link rel="stylesheet" type="text/css" href="stylesheets/himera.css" />
+  <title>murepl</title>
+</head>
+<body>
+    <div class="console" id="console"></div>
+    <script>
+        goog.require('cljs.core');
+        goog.provide('cljs.user');
+    </script>
+</body>
+</html>
