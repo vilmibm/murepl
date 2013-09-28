@@ -1,5 +1,4 @@
-(ns murepl.console
-  (:require [himera.client.repl :as himera]))
+(ns murepl.console)
 
 (js/alert "hi")
   
