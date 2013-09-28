@@ -1,0 +1,3 @@
+[submodule "himera"]
+	path = himera
+	url = git@github.com:nathanielksmith/himera.git
