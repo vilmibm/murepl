@@ -7,6 +7,8 @@
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
+(def no-such-user "Have you run connect or new-player yet?")
+
 (defn say [msg]
   (fn [player-data]
     (if-let [player (core/find-player player-data)]
@@ -14,7 +16,8 @@
             others (core/others-in-room player room)]
         (do
           (events/notify-players others (format "%s says: '%s'" (:name player) msg))
-          {:result {} :msg (format "You say: '%s'" msg)})))))
+          {:result {} :msg (format "You say: '%s'" msg)}))
+      {:error no-such-user})))
 
 (defn examine [player-name]
   (fn [player-data]
@@ -26,14 +29,15 @@
         (println player-name room players looking-at)
         (if (empty? looking-at)
           {:result {} :msg "There is no one near you by that name."}
-          {:result {} :msg (format "You examine %s: %s" player-name (:desc (first looking-at)))})))))
+          {:result {} :msg (format "You examine %s: %s" player-name (:desc (first looking-at)))}))
+      {:error no-such-user})))
 
 
 (defn look []
   (fn [player-data]
     (if-let [player (core/find-player player-data)]
       {:result {} :msg (core/look-at player (core/lookup-location player))}
-      nil)))
+      {:error no-such-user})))
 
 (defn go [direction]
     (fn [player]
@@ -54,15 +58,17 @@
                                        (format "%s enters from %s" player-name came-from))
                 {:result {} :msg (core/look-at player new-room)}))
             {:error "You can't go that way."}))
-          {:error "Have you run connect or new-player?"}))))
+          {:error no-such-user}))))
 
 (defn create-room [name desc exit-map]
-  (fn [_]
-    (let [room   {:name name
-                  :desc desc
-                  :exits exit-map}
-          result (core/add-room! room)]
-      {:result result :msg "You added a room."})))
+  (fn [player]
+    (if-let [player (core/find-player player)]
+      (let [room   {:name name
+                    :desc desc
+                    :exits exit-map}
+            result (core/add-room! room)]
+        {:result result :msg "You added a room."})
+      {:error no-such-user})))
 
 (defn connect [name password]
   (fn [_]
