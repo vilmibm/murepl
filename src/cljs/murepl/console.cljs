@@ -59,14 +59,14 @@
 (def ^:private build-success (partial build-msg success-class))
 (def ^:private build-blank (partial build-msg blank-class ""))
 
-(def ^:dynamic *socket* nil)
+
+(declare socket)
 
 (defn- set-player-data [data]
+  (.log js/console data)
   (.setItem (.-sessionStorage js/window) "player" data)
-  (if (nil? *socket*)
-    (do
-      (set! *socket* (js/WebSocket. "ws://localhost:9999/socket"))
-      (.send *socket* (:uuid (.parse js/JSON data))))))
+  (if (not (nil? socket))
+      (.send socket (.-uuid (.parse js/JSON data)))))
 
 (defn- get-player-data []
   (.getItem (.-sessionStorage js/window) "player"))
@@ -76,8 +76,6 @@
     (build-blank)
     (let [input (.trim js/jQuery line)
           result (go-eval input)]
-      (.log js/console "GOT RESULT FROM BACKEND:")
-      (.log js/console result)
       (if-let [error-msg (:error result)]
         (build-error error-msg)
         (do
@@ -98,4 +96,9 @@
                                         :commandHandle on-handle
                                         :autofocus true
                                         :animateScroll true
-                                        :promptHistory true}))))))
+                                        :promptHistory true})))
+            (def socket (js/WebSocket. "ws://localhost:8888/socket"))
+            (set! (.-onmessage socket) (fn [data]
+                                         (let [msg (.-data data)]
+                                           (.log js/console "Got ws msg:" data)
+                                           (.msg js/controller msg)))))))

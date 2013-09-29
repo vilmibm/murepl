@@ -19,7 +19,8 @@
                  [ring-clj-params "0.1.0"]
                  [ring/ring-json "0.2.0"]
                  [ring/ring-core "1.1.3"]
-                 [ring/ring-jetty-adapter "1.1.3"]]
+                 [ring/ring-jetty-adapter "1.1.3"]
+                 [org.webbitserver/webbit "0.4.14"]]
   :cljsbuild {:builds [{:source-paths ["src/cljs"]
                         :compiler {:output-dir "resources/public/js/"
                                    :output-to "resources/public/js/murepl.js"

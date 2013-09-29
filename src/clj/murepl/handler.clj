@@ -12,8 +12,11 @@
             [ring.adapter.jetty         :refer (run-jetty)]
             [compojure.handler          :as handler]
             [compojure.route            :as route]
-            [org.httpkit.server         :as httpkit]
-            [ring.util.response         :as resp]))
+            [ring.util.response         :as resp])
+  (:import (org.webbitserver WebServer
+                             WebServers
+                             WebSocketHandler)
+           (org.webbitserver.handler StaticFileHandler)))
 
 (defn build-response [body-map]
     {:status 200
@@ -31,7 +34,6 @@
 (defroutes api-routes
   ;; index page. serves up repl
   (GET "/" [] (resp/file-response "index.html" {:root "resources/public"}))
-  (GET "/socket" [] events/ws)
 
   (POST "/eval" [expr :as r]
         (-> (common/get-player-data r)
@@ -47,6 +49,13 @@
       (wrap-gzip)))
 
 (defn -main [& args]
+  (println "starting nrepl")
   (defonce nrepl (nrsrv/start-server :port 7888))
+  (println "creating game world")
   (core/init!)
-  (run-jetty app {:port 9999 :host "0.0.0.0"}))
+  (println "starting jetty")
+  (run-jetty app {:port 9999 :host "0.0.0.0" :join? false})
+  (println "starting webbit")
+  (doto (WebServers/createWebServer 8888)
+        (.add "/socket" events/ws)
+        (.start)))
