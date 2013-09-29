@@ -1,5 +1,6 @@
 (ns murepl.commands
-  (:require [murepl.core :as core]))
+  (:require [clojure.data.json :as json]
+            [murepl.core :as core]))
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
@@ -24,6 +25,7 @@
 
 (defn new-player [&{:keys [name password desc] :as player}]
   (fn [_]
-    (let [player (assoc :uuid (uuid))
+    ;; TODO check if player exists; deny them this if they do
+    (let [player (assoc player :uuid (uuid))
           result (core/add-player! player)]
-      {:result result :msg "Congratulations, you exist."})))
+      {:player (json/write-str result) :result result :msg "Congratulations, you exist."})))

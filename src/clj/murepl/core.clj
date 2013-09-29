@@ -46,7 +46,8 @@
 (defn add-player! [player]
   (dosync
    (alter *players* #(assoc % (:uuid player) player)))
-  (place-player! player "Lobby"))
+  (place-player! player "Lobby")
+  player)
 
 (defn move-player! [direction player]
   (let [current-room-name (lookup-location player) 

@@ -19,6 +19,10 @@
             [clojure.walk :as walk]
             [clojure.zip :as zip]))
 
+(def ^:private error-class "jquery-console-message-error")
+(def ^:private success-class "jquery-console-success")
+(def ^:private blank-class "jquery-console-message-value")
+
 (defn- map->js [m]
   (let [out (js-obj)]
     (doseq [[k v] m]
@@ -35,11 +39,9 @@
                          :dataType "text"
                          :success #(reset! data (reader/read-string %))})]
     (.ajax js/jQuery params)
-    (.log js/console @data)
     @data))
 
-(defn- on-validate [input]
-  (not (empty? input)))
+(defn- on-validate [input] (not (empty? input)))
 
 (defn- starts-with? [o s]
   (= (.slice (clojure.string/trim s)
@@ -49,29 +51,44 @@
 
 (def ^:private is-comment? #(starts-with? ";" %))
 
-(defn- on-handle [line report]
+(defn- build-msg
+  [klass msg]
+  (array (map->js {:msg msg :className klass})))
+
+(def ^:private build-error (partial build-msg error-class))
+(def ^:private build-success (partial build-msg success-class))
+(def ^:private build-blank (partial build-msg blank-class ""))
+
+(defn- set-player-data [data]
+  (.setItem (.-sessionStorage js/window) "player" data))
+(defn- get-player-data []
+  (.getItem (.-sessionStorage js/window) "player"))
+
+(defn- on-handle [line _]
   (if (is-comment? line)
-    (build-msg "" "" "jquery-console-message-value")
+    (build-blank)
     (let [input (.trim js/jQuery line)
           result (go-eval input)]
+      (.log js/console "GOT RESULT FROM BACKEND:")
       (.log js/console result)
-      (if-let [err (and result (:error result))]
-        (build-msg "Compilation error: " err "jquery-console-message-error")
-        (try
-          (:msg result)
-          (catch js/Error e
-            (build-msg "Compilation error: " e "jquery-console-message-error")))))))
+      (if-let [error-msg (:error result)]
+        (build-error error-msg)
+        (do
+          (if-let [player-data (:player result)] (set-player-data player-data))
+          (build-success (:msg result)))))))
 
 (defn ^:export go []
   (.ready (js/jQuery js/document)
           (fn []
+            (.ajaxPrefilter js/jQuery (fn [options _ _]
+                                        (if-let [data (get-player-data)]
+                                          (set! (.-headers options) (js-obj "Player" data)))))
             (set! js/controller
-                    (.console (js/jQuery "#console") (map->js {:welcomeMessage "welcome to murepl."
+                    (.console (js/jQuery "#console") 
+                              (map->js {:welcomeMessage "welcome to murepl."
                                         :promptLabel "> "
                                         :commandValidate on-validate
                                         :commandHandle on-handle
                                         :autofocus true
                                         :animateScroll true
                                         :promptHistory true}))))))
-  
-  
