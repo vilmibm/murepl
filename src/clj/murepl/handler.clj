@@ -6,7 +6,6 @@
   (:require murepl.commands
             [murepl.core                :as core]
             [murepl.events              :as events]
-            [murepl.common              :as common]
             [clojure.data.json          :as json]
             [clojure.tools.nrepl.server :as nrsrv]
             [ring.adapter.jetty         :refer (run-jetty)]
@@ -31,12 +30,21 @@
       (let [result (command-fn player)]
         result))))
 
+(defn get-player-data [request]
+  (let [raw (get (:headers request) "player")]
+    (if (nil? raw)
+      nil
+      (into {}
+            (for [[k v] (json/read-str raw)]
+              [(keyword k) v])))))
+
+
 (defroutes api-routes
   ;; index page. serves up repl
   (GET "/" [] (resp/file-response "index.html" {:root "resources/public"}))
 
   (POST "/eval" [expr :as r]
-        (-> (common/get-player-data r)
+        (-> (get-player-data r)
             (eval-command expr)
             (build-response)))
 

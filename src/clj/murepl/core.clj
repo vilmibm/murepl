@@ -1,20 +1,12 @@
 (ns murepl.core
-  (:require [clojure.set    :as set]
+  (:require [murepl.common  :as common]
+            [clojure.set    :as set]
             [clojure.string :as string]))
 
 (declare ^:dynamic *world*)
 (declare ^:dynamic *players*)
 (declare ^:dynamic *rooms*)
 (declare ^:dynamic *items*)
-
-(defn opposite-dir [direction]
-  (case direction
-    :north :south
-    :south :north
-    :east :west
-    :west :east
-    :up :down
-    :down :up))
 
 (defn valid-auth? [auth player]
   (and (= (:name player) (:name auth))
@@ -56,8 +48,7 @@
                     "You are alone here.")
                   (if (not (empty? exit-names))
                     (format "Exits: %s" (string/join ", " exit-names))
-                    "There is no way out.")
-                  (string/join ", " (for [[k v] (:exits room)] (name k)))])))
+                    "There is no way out.")])))
 
 
 
@@ -66,7 +57,7 @@
    (alter *rooms* #(assoc % (:name room) room))
    (doseq [[direction room-name] (seq (:exits room))]
      (let [exit-to     (find-room-by-name room-name)
-           new-exits   (assoc (:exits exit-to) (opposite-dir direction) (:name room))
+           new-exits   (assoc (:exits exit-to) (common/opposite-dir direction) (:name room))
            new-exit-to (assoc exit-to :exits new-exits)]
        (alter *rooms* #(assoc % (:name exit-to) new-exit-to))))))
 

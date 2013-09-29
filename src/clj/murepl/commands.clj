@@ -1,12 +1,11 @@
 (ns murepl.commands
   (:require [murepl.core       :as core]
+            [murepl.common     :as common]
             [murepl.events     :as events]
             [clojure.data.json :as json]
             [clojure.string    :as string]))
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
-
-(def directions [:north :south :west :east :up :down])
 
 (defn say [msg]
   (fn [player-data]
@@ -24,13 +23,22 @@
       nil)))
 
 (defn go [direction]
-  (if (some #{direction} directions)
+  (if (common/valid-direction? direction)
     (fn [player]
-      (let [player (core/find-player player)]
+      (let [player       (core/find-player player)
+            player-name  (:name player)
+            old-room     (core/lookup-location player)]
         (if (core/player-can-move? player direction)
           (do
             (core/move-player! direction player)
-            {:result {} :msg (core/look-at (core/lookup-location player))})
+            (let [new-room        (core/lookup-location player)
+                  leave-observers (core/others-in-room player old-room)
+                  enter-observers (core/others-in-room player new-room)
+                  came-from       (common/pretty-came-from (common/opposite-dir direction))]
+              (events/notify-players leave-observers (format "%s leaves %s" player-name (name direction)))
+              (events/notify-players enter-observers 
+                                     (format "%s enters from %s" player-name came-from))
+              {:result {} :msg (core/look-at player new-room)}))
           nil) ;; TODO throw
         ))
     nil)) ;; TODO throw
