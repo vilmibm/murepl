@@ -5,11 +5,14 @@
         ring.middleware.gzip)
   (:require murepl.commands
             [murepl.core                :as core]
+            [murepl.events              :as events]
+            [murepl.common              :as common]
             [clojure.data.json          :as json]
             [clojure.tools.nrepl.server :as nrsrv]
             [ring.adapter.jetty         :refer (run-jetty)]
             [compojure.handler          :as handler]
             [compojure.route            :as route]
+            [org.httpkit.server         :as httpkit]
             [ring.util.response         :as resp]))
 
 (defn build-response [body-map]
@@ -23,23 +26,15 @@
     (let [command-fn (binding [*ns* (find-ns 'murepl.commands)] (eval expr))]
       (println "Handling command from player" player)
       (let [result (command-fn player)]
-        (println result)
         result))))
-
-(defn get-player-data [request]
-  (let [raw (get (:headers request) "player")]
-    (if (nil? raw)
-      nil
-      (into {}
-            (for [[k v] (json/read-str raw)]
-              [(keyword k) v])))))
 
 (defroutes api-routes
   ;; index page. serves up repl
   (GET "/" [] (resp/file-response "index.html" {:root "resources/public"}))
+  (GET "/socket" [] events/ws)
 
   (POST "/eval" [expr :as r]
-        (-> (get-player-data r)
+        (-> (common/get-player-data r)
             (eval-command expr)
             (build-response)))
 

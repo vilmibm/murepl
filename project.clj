@@ -15,6 +15,7 @@
                  [org.clojure/tools.nrepl "0.2.3"]
                  [amalloy/ring-gzip-middleware "0.1.2"]
                  [compojure "1.1.5"]
+                 [http-kit "2.1.11"]
                  [ring-clj-params "0.1.0"]
                  [ring/ring-json "0.2.0"]
                  [ring/ring-core "1.1.3"]

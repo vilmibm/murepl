@@ -41,7 +41,6 @@
      (let [exit-to     (find-room-by-name room-name)
            new-exits   (assoc (:exits exit-to) (opposite-dir direction) (:name room))
            new-exit-to (assoc exit-to :exits new-exits)]
-       (println exit-to new-exits new-exit-to)
        (alter *rooms* #(assoc % (:name exit-to) new-exit-to))))))
 
 (defn place-player! [player room-name]

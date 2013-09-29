@@ -59,8 +59,15 @@
 (def ^:private build-success (partial build-msg success-class))
 (def ^:private build-blank (partial build-msg blank-class ""))
 
+(def ^:dynamic *socket* nil)
+
 (defn- set-player-data [data]
-  (.setItem (.-sessionStorage js/window) "player" data))
+  (.setItem (.-sessionStorage js/window) "player" data)
+  (if (nil? *socket*)
+    (do
+      (set! *socket* (js/WebSocket. "ws://localhost:9999/socket"))
+      (.send *socket* (:uuid (.parse js/JSON data))))))
+
 (defn- get-player-data []
   (.getItem (.-sessionStorage js/window) "player"))
 
