@@ -20,7 +20,7 @@
 (defn look []
   (fn [player-data]
     (if-let [player (core/find-player player-data)]
-      {:result {} :msg (core/look-at (core/lookup-location player))}
+      {:result {} :msg (core/look-at player (core/lookup-location player))}
       nil)))
 
 (defn go [direction]

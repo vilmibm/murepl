@@ -1,5 +1,6 @@
 (ns murepl.core
-  (:require [clojure.set :as set]))
+  (:require [clojure.set    :as set]
+            [clojure.string :as string]))
 
 (declare ^:dynamic *world*)
 (declare ^:dynamic *players*)
@@ -30,18 +31,26 @@
 (defn lookup-location [player]
   (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @*world*)))))
 
-(defn look-at [room]
-  (clojure.string/join "\n" 
-                       [(format "You find yourself in the %s: %s" (:name room) (:desc room))
-                        "Exits:"
-                        (clojure.string/join ", " (for [[k v] (:exits room)] (name k)))]))
-
 (defn others-in-room [player room]
   (println "o-i-r" player room)
   (filter #(not (= (:uuid player) (:uuid %)))
           (map find-player-by-uuid
                (map first
                     (set/select #(= (:name room) (second %)) @*world*)))))
+
+(defn look-at [player room]
+  (let [other-player-names (map :name (others-in-room player room))
+        exit-names         (for [[k v] (:exits room)] (name k))]
+    (string/join "\n" 
+                 [(format "You find yourself in the %s: %s" (:name room) (:desc room))
+                  (if (not (empty? other-player-names))
+                    (format "Others here: %s" (string/join ", " other-player-names))
+                    "You are alone here.")
+                  (if (not (empty? exit-names))
+                    (format "Exits: %s" (string/join ", " exit-names))
+                    "There is no way out.")
+                  (string/join ", " (for [[k v] (:exits room)] (name k)))])))
+
 
 
 (defn add-room! [room]
