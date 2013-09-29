@@ -25,6 +25,8 @@
       found-player
       nil)
     nil))
+(defn find-player-by-uuid [uuid]
+  (get @*players* uuid))
 (defn lookup-location [player]
   (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @*world*)))))
 
@@ -33,6 +35,14 @@
                        [(format "You find yourself in the %s: %s" (:name room) (:desc room))
                         "Exits:"
                         (clojure.string/join ", " (for [[k v] (:exits room)] (name k)))]))
+
+(defn others-in-room [player room]
+  (println "o-i-r" player room)
+  (filter #(not (= (:uuid player) (:uuid %)))
+          (map find-player-by-uuid
+               (map first
+                    (set/select #(= (:name room) (second %)) @*world*)))))
+
 
 (defn add-room! [room]
   (dosync

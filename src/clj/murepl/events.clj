@@ -28,7 +28,17 @@
     (onClose [c] (ws-close c))
     (onMessage [c m] (ws-message c m))))
 
+(defn con-for-player [player]
+  (get (set/map-invert @clients) (:uuid player)))
+
 (defn send-msg-to-player [player msg]
-  (if-let [con (get (set/map-invert @clients) (:uuid player))]
-    (println "Trying to send" con msg)
-    (.send con (json/write-str msg))))
+  (if-let [con (con-for-player player)]
+    (do
+      (println "Trying to send" con msg)
+      (.send con msg))))
+
+(defn notify-players [players msg]
+  (println players msg)
+  (doseq [player players]
+    (send-msg-to-player player msg)))
+    

@@ -1,10 +1,21 @@
 (ns murepl.commands
-  (:require [clojure.data.json :as json]
-            [murepl.core :as core]))
+  (:require [murepl.core       :as core]
+            [murepl.events     :as events]
+            [clojure.data.json :as json]
+            [clojure.string    :as string]))
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (def directions [:north :south :west :east :up :down])
+
+(defn say [msg]
+  (fn [player-data]
+    (if-let [player (core/find-player player-data)]
+      (let [room   (core/lookup-location player)
+            others (core/others-in-room player room)]
+        (do
+          (events/notify-players others (format "%s says: '%s'" (:name player) msg))
+          {:result {} :msg (format "You say: '%s'" msg)})))))
 
 (defn look []
   (fn [player-data]
