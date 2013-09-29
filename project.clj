@@ -12,6 +12,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/clojurescript "0.0-1889"]
                  [org.clojure/data.json "0.2.3"]
+                 [org.clojure/tools.nrepl "0.2.3"]
                  [amalloy/ring-gzip-middleware "0.1.2"]
                  [compojure "1.1.5"]
                  [ring-clj-params "0.1.0"]

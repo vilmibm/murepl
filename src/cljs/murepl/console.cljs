@@ -82,7 +82,7 @@
           (fn []
             (.ajaxPrefilter js/jQuery (fn [options _ _]
                                         (if-let [data (get-player-data)]
-                                          (set! (.-headers options) (js-obj "Player" data)))))
+                                          (set! (.-headers options) (js-obj "player" data)))))
             (set! js/controller
                     (.console (js/jQuery "#console") 
                               (map->js {:welcomeMessage "welcome to murepl."

@@ -19,13 +19,14 @@
   (and (= (:name player) (:name auth))
        (= (:password player (:password auth)))))
 (defn find-room-by-name [room-name] (get @*rooms* room-name))
-(defn find-player [player] 
-  (let [found-player (get @*players* (:uuid player))]
-    (if (valid-auth? player found-player)
+(defn find-player [player-data] 
+  (if-let [found-player (get @*players* (:uuid player-data))]
+    (if (valid-auth? player-data found-player)
       found-player
-      nil)))
+      nil)
+    nil))
 (defn lookup-location [player]
-  (second (first (set/select #(= (:uuid player) (first %)) @*world*))))
+  (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @*world*)))))
 
 (defn add-room! [room]
   (dosync
@@ -40,7 +41,7 @@
   (dosync
    (let [uuid (:uuid player)
          room (find-room-by-name room-name)]
-     (alter *world* (fn [col] (filter #(not (= (first %) uuid)) col)))
+     (alter *world* (fn [col] (set/select #(not (= (first %) uuid)) col)))
      (alter *world* #(conj % [uuid room-name])))))
 
 (defn add-player! [player]
@@ -50,14 +51,14 @@
   player)
 
 (defn move-player! [direction player]
-  (let [current-room-name (lookup-location player) 
-        current-room      (find-room-by-name current-room-name)
-        exit-to-name      (get (:exits current-room) direction)]
+  (let [current-room (lookup-location player) 
+        exit-to-name (get (:exits current-room) direction)]
     (if (nil? exit-to-name)
       nil ;; TODO throw
       (place-player! player exit-to-name))))
 
-(defn player-can-move? [player direction] true) ; TODO make it real
+(defn player-can-move? [player direction] 
+  (contains? (:exits (lookup-location player)) direction))
 
 (defn init! []
   (defonce ^:dynamic *world*   (ref #{})) ;set of tuples that map uuid x room name

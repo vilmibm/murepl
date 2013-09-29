@@ -20,12 +20,24 @@
     (let [room   {:name name
                   :desc desc
                   :exit-map exit-map}
-          result (core/add-room!)]
+          result (core/add-room! room)]
       {:result result :msg "You added a room."})))
 
-(defn new-player [&{:keys [name password desc] :as player}]
-  (fn [_]
-    ;; TODO check if player exists; deny them this if they do
-    (let [player (assoc player :uuid (uuid))
-          result (core/add-player! player)]
-      {:player (json/write-str result) :result result :msg "Congratulations, you exist."})))
+(defn new-player [&{:keys [name password desc] :as player-data}]
+  (fn [player]
+    ;; TODO why find-player sending new?
+    (println "looking for" player)
+    (println (core/find-player player))
+    (if (not (nil? (core/find-player player)))
+      {:result {} :msg "You already have an active player!"}
+      (let [new-player (assoc player-data :uuid (uuid))
+            result (core/add-player! new-player)]
+        {:player (json/write-str result) :result result :msg "Congratulations, you exist."}))))
+
+;; fixtures
+(defn lucy []
+  (new-player :name "lucy" :desc "someone" :password "foo"))
+(defn joe []
+  (new-player :name "joe" :desc "someone" :password "foo"))
+(defn alley []
+  (create-room "alley" "dark" {:south "Lobby"}))

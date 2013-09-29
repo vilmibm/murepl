@@ -4,12 +4,13 @@
         ring.middleware.clj-params
         ring.middleware.gzip)
   (:require murepl.commands
-            [murepl.core        :as core]
-            [clojure.data.json  :as json]
-            [ring.adapter.jetty :refer (run-jetty)]
-            [compojure.handler  :as handler]
-            [compojure.route    :as route  ]
-            [ring.util.response :as resp   ]))
+            [murepl.core                :as core]
+            [clojure.data.json          :as json]
+            [clojure.tools.nrepl.server :as nrsrv]
+            [ring.adapter.jetty         :refer (run-jetty)]
+            [compojure.handler          :as handler]
+            [compojure.route            :as route]
+            [ring.util.response         :as resp]))
 
 (defn build-response [body-map]
     {:status 200
@@ -20,13 +21,16 @@
   (binding [*ns* (find-ns 'murepl.commands)]
     ;; TODO try/catch around eval
     (let [command-fn (binding [*ns* (find-ns 'murepl.commands)] (eval expr))]
+      (println "Handling command from player" player)
       (command-fn player))))
 
 (defn get-player-data [request]
-  (let [raw (:Player (:headers request))]
+  (let [raw (get (:headers request) "player")]
     (if (nil? raw)
-      {}
-      (json/read-str raw))))
+      nil
+      (into {}
+            (for [[k v] (json/read-str raw)]
+              [(keyword k) v])))))
 
 (defroutes api-routes
   ;; index page. serves up repl
@@ -46,5 +50,6 @@
       (wrap-gzip)))
 
 (defn -main [& args]
+  (defonce nrepl (nrsrv/start-server :port 7888))
   (core/init!)
   (run-jetty app {:port 9999 :host "0.0.0.0"}))
