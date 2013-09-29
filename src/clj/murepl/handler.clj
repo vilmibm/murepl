@@ -45,15 +45,15 @@
 
 (defroutes api-routes
   ;; index page. serves up repl
-  (GET "/" [] (resp/file-response "index.html" {:root "resources/public"}))
-
   (POST "/eval" [expr :as r]
         (-> (get-player-data r)
             (eval-command expr)
             (build-response)))
+  (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
 
   (route/resources "/")
-  (route/not-found "four oh four"))
+  (route/not-found {:status 301 :headers {"Location" "/index.html"}}))
+  ;(route/not-found (resp/file-response "index.html" {:root "resources/public"})))
 
 (def app
   (-> api-routes
@@ -66,7 +66,7 @@
   (println "creating game world")
   (core/init!)
   (println "starting jetty")
-  (run-jetty app {:port 9999 :host "0.0.0.0" :join? false})
+  (run-jetty app {:port 80 :host "162.243.29.87" :join? false})
   (println "starting webbit")
   (doto (WebServers/createWebServer 8888)
         (.add "/socket" events/ws)

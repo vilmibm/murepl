@@ -107,7 +107,7 @@ If not, try (new-player :name \"your name\" :desc \"a description of yourself\" 
             (.ajaxPrefilter js/jQuery (fn [options _ _]
                                         (if-let [data player-data]
                                           (set! (.-headers options) (js-obj "player" data)))))
-            (def socket (js/WebSocket. "ws://localhost:8888/socket"))
+            (def socket (js/WebSocket. "ws://162.243.29.87:8888/socket"))
             (set! js/controller (build-console welcome-msg))
             (set! (.-onmessage socket) (fn [data]
                                          (let [msg (.-data data)]
