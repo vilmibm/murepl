@@ -22,7 +22,9 @@
     ;; TODO try/catch around eval
     (let [command-fn (binding [*ns* (find-ns 'murepl.commands)] (eval expr))]
       (println "Handling command from player" player)
-      (command-fn player))))
+      (let [result (command-fn player)]
+        (println result)
+        result))))
 
 (defn get-player-data [request]
   (let [raw (get (:headers request) "player")]
