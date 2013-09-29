@@ -98,7 +98,7 @@
 (def welcome-msg
 "Welcome to MUREPL!
 If you already have a character, run (connect \"your name\" \"your password\").
-If not, try (new-player :name \"your name\" :desc \"a description of yourself\" :password \"a plaintext password\")
+If not, try (new-player \"your name\" \"a plaintext password\" \"a description of yourself\" )
 ")
 
 (defn ^:export go []
