@@ -5,8 +5,6 @@
 (declare ^:dynamic *rooms*)
 (declare ^:dynamic *items*)
 
-;; (select #(= this-uuid (:uuid %)) players-set)
-
 (defn opposite-dir [direction]
   (case direction
     :north :south
