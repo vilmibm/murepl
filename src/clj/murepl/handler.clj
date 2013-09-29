@@ -22,13 +22,17 @@
      :headers {"Content-Type" "application/clojure; charset=utf-8"}
      :body (pr-str body-map)})
 
-(defn eval-command [player expr]
-  (binding [*ns* (find-ns 'murepl.commands)]
-    ;; TODO try/catch around eval
-    (let [command-fn (binding [*ns* (find-ns 'murepl.commands)] (eval expr))]
-      (println "Handling command from player" player)
-      (let [result (command-fn player)]
-        result))))
+(defn error-fn [e]
+  (fn [_]
+    {:error (str "I did not understand you. Please try again. Error was: " (.getMessage e))}))
+
+(defn with-player-fn [expr]
+  (try
+    (binding [*ns* (find-ns 'murepl.commands)]
+      (eval expr))
+    (catch Exception e (error-fn e))))
+
+(defn eval-command [player expr] ((with-player-fn expr) player))
 
 (defn get-player-data [request]
   (let [raw (get (:headers request) "player")]
