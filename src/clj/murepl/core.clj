@@ -37,6 +37,14 @@
           (map find-player-by-uuid
                (map first
                     (set/select #(= (:name room) (second %)) @*world*)))))
+(defn logout-player [player]
+  (let [last-room (lookup-location player)
+        observers (others-in-room player last-room)
+        uuid      (:uuid player)]
+    (dosync
+     (alter *world* (fn [col] (set/select #(not= (first %) uuid) col)))
+     (alter *players* #(dissoc % uuid)))
+    observers))
 
 (defn look-at [player room]
   (let [other-player-names (map :name (others-in-room player room))
