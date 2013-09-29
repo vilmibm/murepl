@@ -36,25 +36,25 @@
       nil)))
 
 (defn go [direction]
-  (if (common/valid-direction? direction)
     (fn [player]
-      (let [player       (core/find-player player)
-            player-name  (:name player)
-            old-room     (core/lookup-location player)]
-        (if (core/player-can-move? player direction)
-          (do
-            (core/move-player! direction player)
-            (let [new-room        (core/lookup-location player)
-                  leave-observers (core/others-in-room player old-room)
-                  enter-observers (core/others-in-room player new-room)
-                  came-from       (common/pretty-came-from (common/opposite-dir direction))]
-              (events/notify-players leave-observers (format "%s leaves %s" player-name (name direction)))
-              (events/notify-players enter-observers 
-                                     (format "%s enters from %s" player-name came-from))
-              {:result {} :msg (core/look-at player new-room)}))
-          nil) ;; TODO throw
-        ))
-    nil)) ;; TODO throw
+      (if (not (common/valid-direction? direction))
+        {:error "Sorry, that's not a valid direction"}
+        (if-let [player (core/find-player player)]
+          (let [player-name  (:name player)
+                old-room     (core/lookup-location player)]
+            (if (core/player-can-move? player direction)
+              (do
+                (core/move-player! direction player)
+              (let [new-room        (core/lookup-location player)
+                    leave-observers (core/others-in-room player old-room)
+                    enter-observers (core/others-in-room player new-room)
+                    came-from       (common/pretty-came-from (common/opposite-dir direction))]
+                (events/notify-players leave-observers (format "%s leaves %s" player-name (name direction)))
+                (events/notify-players enter-observers 
+                                       (format "%s enters from %s" player-name came-from))
+                {:result {} :msg (core/look-at player new-room)}))
+            {:error "You can't go that way."}))
+          {:error "Have you run connect or new-player?"}))))
 
 (defn create-room [name desc exit-map]
   (fn [_]
