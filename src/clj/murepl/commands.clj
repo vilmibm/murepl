@@ -63,11 +63,13 @@
 (defn create-room [name desc exit-map]
   (fn [player]
     (if-let [player (core/find-player player)]
-      (let [room   {:name name
-                    :desc desc
-                    :exits exit-map}
-            result (core/add-room! room)]
-        {:result result :msg "You added a room."})
+      (let [room-data   {:name name
+                         :desc desc
+                         :exits exit-map}]
+        (if (core/find-room-by-name name)
+          {:error "Sorry, a room with that name already exists."}
+          (let [result (core/add-room! room-data)]
+            {:result result :msg "You added a room."})))
       {:error no-such-user})))
 
 (defn connect [name password]
@@ -79,18 +81,21 @@
         {:player (json/write-str player) :msg "Welcome back."})
       {:error "Sorry, no such player exists."})))
 
-(defn new-player [&{:keys [name password desc] :as player-data}]
+(defn new-player [name password desc]
   (fn [current-player]
-    (if (not (nil? (core/find-player current-player)))
-      {:result {} :msg "You already have an active player!"}
-      (let [new-player (assoc player-data :uuid (uuid))
-            result (core/add-player! new-player)]
-        {:player (json/write-str result) :result result :msg "Congratulations, you exist."}))))
+    (let [player-data {:name name :password password :desc desc}]
+          (if (not (nil? (core/find-player current-player)))
+            {:error "You already have an active player!"}
+            (if (core/duplicate-player-name? player-data)
+              {:error "Sorry, a player already exists with that name"}
+              (let [new-player (assoc player-data :uuid (uuid))
+                    result (core/add-player! new-player)]
+                {:player (json/write-str result) :result result :msg "Congratulations, you exist."}))))))
 
 ;; fixtures
 (defn lucy []
-  (new-player :name "lucy" :desc "someone" :password "foo"))
+  (new-player "lucy" "foo" "someone"))
 (defn joe []
-  (new-player :name "joe" :desc "someone" :password "foo"))
+  (new-player "joe" "foo" "someone else"))
 (defn alley []
   (create-room "alley" "dark" {:south "Lobby"}))

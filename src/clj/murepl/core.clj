@@ -39,6 +39,9 @@
   (filter #(not (= (:uuid player) (:uuid %)))
           (players-in-room room)))
 
+(defn duplicate-player-name? [player]
+  (not (empty? (filter #(= (:name player) (:name (val %))) @*players*))))
+
 (defn logout-player [player]
   (let [last-room (lookup-location player)
         observers (others-in-room player last-room)
