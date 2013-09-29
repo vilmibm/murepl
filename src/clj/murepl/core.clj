@@ -2,40 +2,63 @@
 
 (declare ^:dynamic *world*)
 (declare ^:dynamic *players*)
+(declare ^:dynamic *rooms*)
+(declare ^:dynamic *items*)
 
-(defn init []
-  (defonce ^:dynamic *world*   (ref {}))
-  (defonce ^:dynamic *players* (ref #{})))
+;; (select #(= this-uuid (:uuid %)) players-set)
+
+(defn opposite-dir [direction]
+  (case direction
+    :north :south
+    :south :north
+    :east :west
+    :west :east
+    :up :down
+    :down :up))
+
+(defn init! []
+  (defonce ^:dynamic *world*   (ref #{})) ;set of tuples that map uuid x room name
+  (defonce ^:dynamic *players* (ref {}))
+  (defonce ^:dynamic *rooms*   (ref {}))
+  (defonce ^:dynamic *items*   (ref {}))
+  (add-room! {:name "Lobby" :desc "A windowless room." :exits {}}))
+
+(defn reset! []
+  (dosync
+   (ref-set *world*   #{})
+   (ref-set *players* {})
+   (ref-set *rooms*   {})
+   (ref-set *items*   {}))
+  (init!))
+
+(defn find-room   [room-name] (get @*rooms*   room-name))
+(defn find-player [uuid]      (get @*players* uuid))
 
 (defn add-room! [room]
   (dosync
-   (alter *world* #(assoc % (:name room) room))
-   (println *world*))
+   (alter *rooms* #(assoc % (:name room) room))
+   (doseq [[direction room-name] (seq (:exits room))]
+     (let [exit-to     (find-room room-name)
+           new-exits   (assoc (:exits exit-to) (opposite-dir direction) (:name room))
+           new-exit-to (assoc exit-to :exits new-exits)]
+       (alter *rooms* #(assoc % (:name exit-to) new-exit-to))
+     ))))
 
-(defn add-player! [player-map]
+(defn place-player! [uuid room-name]
   (dosync
-   (alter *players* #(conj % player-map))
-   (println *players*)))
+   (let [room (find-room room-name)]
+     (alter *world* (fn [col] (filter #(not (= (first %) uuid)) col)))
+     (alter *world* #(conj % [uuid room-name])))))
 
+(defn add-player! [player]
+  (dosync
+   (alter *players* #(assoc % (:uuid player) player)))
+  (place-player! (:uuid player) "Lobby"))
 
-
-;(defprotocol Player
-;  [player]
-;  (go [direction])
-;  (look [])
-;  (examine [object])
-;  (say [something])
-;  (yell [something])
-;  (whisper [somebody something])
-;  (take [object])
-;  (inventory [])
-;  (drop [])
-;  (use [object action player])
-;  (create-object [])
-;  (create-room [])
-;  (create-bot []))
-
-;(defn foo
-;  "I don't do a whole lot."
-;  [x]
-;   x "Hello, World!")
+(defn move-player! [direction uuid]
+  (let [current-room-name (clojure.set/select #(= uuid (first %)) *world*)
+        current-room      (find-room current-room-name)
+        exit-to-name      (get (:exits current-room) direction)]
+    (if (nil? exit-to-name)
+      nil ;; TODO throw
+      (place-player! uuid exit-to-name))))
