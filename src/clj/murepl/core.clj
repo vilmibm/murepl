@@ -33,6 +33,8 @@
 
 (defn find-room   [room-name] (get @*rooms*   room-name))
 (defn find-player [uuid]      (get @*players* uuid))
+(defn lookup-location [uuid]
+  (second (first (clojure.set/select #(= uuid (first %)) @*world*))))
 
 (defn add-room! [room]
   (dosync
@@ -41,8 +43,7 @@
      (let [exit-to     (find-room room-name)
            new-exits   (assoc (:exits exit-to) (opposite-dir direction) (:name room))
            new-exit-to (assoc exit-to :exits new-exits)]
-       (alter *rooms* #(assoc % (:name exit-to) new-exit-to))
-     ))))
+       (alter *rooms* #(assoc % (:name exit-to) new-exit-to))))))
 
 (defn place-player! [uuid room-name]
   (dosync
@@ -56,9 +57,11 @@
   (place-player! (:uuid player) "Lobby"))
 
 (defn move-player! [direction uuid]
-  (let [current-room-name (clojure.set/select #(= uuid (first %)) *world*)
+  (let [current-room-name (lookup-location uuid)
         current-room      (find-room current-room-name)
         exit-to-name      (get (:exits current-room) direction)]
     (if (nil? exit-to-name)
       nil ;; TODO throw
       (place-player! uuid exit-to-name))))
+
+(defn player-can-move? [auth direction] true) ; TODO make it real
