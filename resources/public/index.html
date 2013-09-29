@@ -7,12 +7,56 @@
   <script type="text/javascript">
     goog.require('murepl.console');
   </script>
-  <link rel="stylesheet" type="text/css" href="stylesheets/base.css" />
   <link rel="stylesheet" type="text/css" href="stylesheets/murepl.css" />
   <title>murepl</title>
 </head>
 <body>
     <div class="console" id="console"></div>
+    <div id="docs">
+        <h3>MUREPL is a clojure repl that runs against a restricted namespace of MUD commands.</h3>
+        <table id="commands">
+            <tr>
+                <th>Command</th>
+                <th>Explanation</th>
+                <th>Example</th>
+            </tr>
+            <tr>
+                <td class="code">(new-player "name" "password" "description")</td>
+                <td>Create a new player and logs you in. Passwords
+                are passed in cleartext</td>
+                <td>(new-player "GraceHopper" "bugsquasher" "Important computer scientist.")</td>
+            </tr>
+            <tr>
+                <td class="code">(connect "name" "password")</td>
+                <td>Log in as a player you have already created.</td>
+                <td>(connect "GraceHopper" "bugsquasher")</td>
+            </tr>
+            <tr>
+                <td class="code">(look)</td>
+                <td>Look around at the are you are in.</td>
+                <td>(look)</td>
+            </tr>
+            <tr>
+                <td class="code">(say "message")</td>
+                <td>Say something out loud. Others in the same room as you will hear.</td>
+                <td>(say "Greetings and salutations")</td>
+            </tr>
+            <tr>
+                <td class="code">(go :direction)</td>
+                <td>Leave the area via the exit in the given direction.</td>
+                <td>(go :north)</td>
+            </tr>
+            <tr>
+                <td class="code">(examine "player")</td>
+                <td>Look at another player. Can examine "self" to examine yourself.</td>
+                <td>(examine "RichHickey")</td>
+            </tr>
+            <tr>
+                <td class="code">(create-room "name" "desc" {:direction "room name"})</td>
+                <td>Add a new room to the world. The exit map must point to an existing room.</td>
+                <td>(create-room "alleyway" "A dark and trash-littered alley." {:south "Lobby"})</td>
+            </tr>
+        </table>
     <script>
         murepl.console.go();
         goog.require('cljs.core');

@@ -1,10 +1,22 @@
 /* Console --------------------------------------------- */
 
 body {
-    background-color: black;
+    //background-color: white;
     font-family:"courier";
     font-size: 120%;
 }
+
+
+
+#commands {
+    font-family: Arial;
+    font-size: 80%;
+}
+
+#commands .code {
+    font-family:monospace;
+}
+
 
 #console {
     color: rgb(50,255,50);
