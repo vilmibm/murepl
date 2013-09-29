@@ -1,13 +1,9 @@
 # murepl
 
-A Clojure library designed to ... well, that part is up to you.
+Browser-based clojure repl that runs in a restricted namespace. It's
+also a MUD.
 
-## Usage
+Just go to http://murepl.clojurecup.com and read the examples/docs there.
 
-FIXME
-
-## License
-
-Copyright © 2013 FIXME
 
 Distributed under the Eclipse Public License, the same as Clojure.
