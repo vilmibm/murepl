@@ -16,6 +16,19 @@
           (events/notify-players others (format "%s says: '%s'" (:name player) msg))
           {:result {} :msg (format "You say: '%s'" msg)})))))
 
+(defn examine [player-name]
+  (fn [player-data]
+    (if-let [player (core/find-player player-data)]
+      (let [player-name (if (= player-name "self") (:name player) player-name)
+            room        (core/lookup-location player)
+            players     (core/players-in-room room)
+            looking-at  (filter #(= (:name %) player-name) players)]
+        (println player-name room players looking-at)
+        (if (empty? looking-at)
+          {:result {} :msg "There is no one near you by that name."}
+          {:result {} :msg (format "You examine %s: %s" player-name (:desc (first looking-at)))})))))
+
+
 (defn look []
   (fn [player-data]
     (if-let [player (core/find-player player-data)]

@@ -23,12 +23,14 @@
 (defn lookup-location [player]
   (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @*world*)))))
 
+(defn players-in-room [room]
+  (map find-player-by-uuid
+       (map first
+            (set/select #(= (:name room) (second %)) @*world*))))
 (defn others-in-room [player room]
-  (println "o-i-r" player room)
   (filter #(not (= (:uuid player) (:uuid %)))
-          (map find-player-by-uuid
-               (map first
-                    (set/select #(= (:name room) (second %)) @*world*)))))
+          (players-in-room room)))
+
 (defn logout-player [player]
   (let [last-room (lookup-location player)
         observers (others-in-room player last-room)
