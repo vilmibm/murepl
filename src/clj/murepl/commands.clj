@@ -64,6 +64,15 @@
           result (core/add-room! room)]
       {:result result :msg "You added a room."})))
 
+(defn connect [name password]
+  (fn [_]
+    (if-let [player (core/find-player-by-auth name password)]
+      (do
+        (println "FOUND PLAYER" player)
+        (core/place-player! player (core/find-room-by-name "Lobby"))
+        {:player (json/write-str player) :msg "Welcome back."})
+      {:error "Sorry, no such player exists."})))
+
 (defn new-player [&{:keys [name password desc] :as player-data}]
   (fn [current-player]
     (if (not (nil? (core/find-player current-player)))

@@ -11,15 +11,23 @@
 (defn valid-auth? [auth player]
   (and (= (:name player) (:name auth))
        (= (:password player (:password auth)))))
+
 (defn find-room-by-name [room-name] (get @*rooms* room-name))
+
 (defn find-player [player-data] 
   (if-let [found-player (get @*players* (:uuid player-data))]
     (if (valid-auth? player-data found-player)
-      found-player
-      nil)
-    nil))
+      found-player)))
+
+(defn find-player-by-auth [name password] ;; TODO needs to stop seeking after a match.
+  (let [auth {:name name :password password}]
+    (second
+          (first
+           (filter #(valid-auth? auth (val %)) @*players*)))))
+
 (defn find-player-by-uuid [uuid]
   (get @*players* uuid))
+
 (defn lookup-location [player]
   (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @*world*)))))
 
@@ -35,9 +43,9 @@
   (let [last-room (lookup-location player)
         observers (others-in-room player last-room)
         uuid      (:uuid player)]
+    (println "LOGGING OUT" uuid)
     (dosync
-     (alter *world* (fn [col] (set/select #(not= (first %) uuid) col)))
-     (alter *players* #(dissoc % uuid)))
+     (alter *world* (fn [col] (set/select #(not= (first %) uuid) col))))
     observers))
 
 (defn look-at [player room]
@@ -63,17 +71,17 @@
            new-exit-to (assoc exit-to :exits new-exits)]
        (alter *rooms* #(assoc % (:name exit-to) new-exit-to))))))
 
-(defn place-player! [player room-name]
+(defn place-player! [player room]
   (dosync
-   (let [uuid (:uuid player)
-         room (find-room-by-name room-name)]
+   (let [uuid      (:uuid player)
+         room-name (:name room)]
      (alter *world* (fn [col] (set/select #(not (= (first %) uuid)) col)))
      (alter *world* #(conj % [uuid room-name])))))
 
 (defn add-player! [player]
   (dosync
    (alter *players* #(assoc % (:uuid player) player)))
-  (place-player! player "Lobby")
+  (place-player! player (find-room-by-name "Lobby"))
   player)
 
 (defn move-player! [direction player]
@@ -81,7 +89,7 @@
         exit-to-name (get (:exits current-room) direction)]
     (if (nil? exit-to-name)
       nil ;; TODO throw
-      (place-player! player exit-to-name))))
+      (place-player! player (find-room-by-name exit-to-name)))))
 
 (defn player-can-move? [player direction] 
   (contains? (:exits (lookup-location player)) direction))

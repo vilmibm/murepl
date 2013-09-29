@@ -30,12 +30,14 @@
   (swap! clients assoc con nil))
 
 (defn ws-close [con]
+  (println "CONNECTION CLOSED: " con)
   (let [player    (core/find-player-by-uuid (get @clients con))
         observers (core/logout-player player)]
     (notify-players observers (format "%s fades slowly away." (:name player))))
   (swap! clients dissoc con))
 
 (defn ws-message [con uuid]
+  (println "GOT UUID MSG" uuid)
   (let [player    (core/find-player-by-uuid uuid)
         observers (core/others-in-room player (core/lookup-location player))]
   (swap! clients assoc con uuid)

@@ -61,43 +61,54 @@
 
 
 (declare socket)
+(declare player-data)
 
-(defn- set-player-data [data]
-  (.log js/console data)
-  (.setItem (.-sessionStorage js/window) "player" data)
+(defn set-player-data [data]
+  (.log js/console "SETTING DATA" data)
+  (def player-data data)
   (if (not (nil? socket))
-      (.send socket (.-uuid (.parse js/JSON data)))))
-
-(defn- get-player-data []
-  (.getItem (.-sessionStorage js/window) "player"))
+    (let [uuid (.-uuid (.parse js/JSON data))]
+      (.log js/console "SENDING TO SOCKET")
+      (.send socket uuid))))
 
 (defn- on-handle [line _]
   (if (is-comment? line)
     (build-blank)
     (let [input (.trim js/jQuery line)
           result (go-eval input)]
+      (.log js/console "RESULT" result)
+      (.log js/console "PLAYERDATER" (:player result))
       (if-let [error-msg (:error result)]
         (build-error error-msg)
         (do
-          (if-let [player-data (:player result)] (set-player-data player-data))
+          (if-let [new-player-data (:player result)] 
+            (if (nil? player-data) (set-player-data new-player-data)))
           (build-success (:msg result)))))))
+
+(defn build-console [welcome-msg]
+  (.console (js/jQuery "#console") 
+            (map->js {:welcomeMessage welcome-msg
+                      :promptLabel "> "
+                      :commandValidate on-validate
+                      :commandHandle on-handle
+                      :autofocus true
+                      :animateScroll true
+                      :promptHistory true})))
+
+(def welcome-msg
+"Welcome to MUREPL!
+If you already have a character, run (connect \"your name\" \"your password\").
+If not, try (new-player :name \"your name\" :desc \"a description of yourself\" :password \"a plaintext password\")
+")
 
 (defn ^:export go []
   (.ready (js/jQuery js/document)
           (fn []
             (.ajaxPrefilter js/jQuery (fn [options _ _]
-                                        (if-let [data (get-player-data)]
+                                        (if-let [data player-data]
                                           (set! (.-headers options) (js-obj "player" data)))))
-            (set! js/controller
-                    (.console (js/jQuery "#console") 
-                              (map->js {:welcomeMessage "welcome to murepl."
-                                        :promptLabel "> "
-                                        :commandValidate on-validate
-                                        :commandHandle on-handle
-                                        :autofocus true
-                                        :animateScroll true
-                                        :promptHistory true})))
             (def socket (js/WebSocket. "ws://localhost:8888/socket"))
+            (set! js/controller (build-console welcome-msg))
             (set! (.-onmessage socket) (fn [data]
                                          (let [msg (.-data data)]
                                            (.log js/console "Got ws msg:" data)
