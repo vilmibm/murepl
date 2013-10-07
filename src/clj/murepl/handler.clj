@@ -17,6 +17,8 @@
                              WebSocketHandler)
            (org.webbitserver.handler StaticFileHandler)))
 
+(def ws-port 8889)
+
 (defn build-response [body-map]
     {:status 200
      :headers {"Content-Type" "application/clojure; charset=utf-8"}
@@ -42,7 +44,6 @@
             (for [[k v] (json/read-str raw)]
               [(keyword k) v])))))
 
-
 (defroutes api-routes
   ;; index page. serves up repl
   (POST "/eval" [expr :as r]
@@ -51,9 +52,7 @@
             (build-response)))
   (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
 
-  (route/resources "/")
-  (route/not-found {:status 301 :headers {"Location" "/index.html"}}))
-  ;(route/not-found (resp/file-response "index.html" {:root "resources/public"})))
+  (route/resources "/"))
 
 (def app
   (-> api-routes
@@ -61,13 +60,19 @@
       (wrap-gzip)))
 
 (defn -main [& args]
-  (println "starting nrepl")
-  (defonce nrepl (nrsrv/start-server :port 7888))
   (println "creating game world")
   (core/init!)
-  (println "starting jetty")
-  (run-jetty app {:port 80 :host "162.243.29.87" :join? false})
-  (println "starting webbit")
-  (doto (WebServers/createWebServer 8888)
-        (.add "/socket" events/ws)
-        (.start)))
+
+  (println "starting nrepl")
+  (defonce nrepl (nrsrv/start-server :port 7888))
+
+  (let [host (if (nil? (first args))  "localhost" (first args))
+        port (if (nil? (second args)) 8888 (Integer. (second args)))]
+
+    (println "starting jetty on" host "port" port)
+    (run-jetty app {:port port :host host :join? false})
+
+    (println "starting webbit on localhost port" ws-port)
+    (doto (WebServers/createWebServer ws-port)
+      (.add "/socket" events/ws)
+      (.start))))
