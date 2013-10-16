@@ -1,23 +1,26 @@
 (ns murepl.handler
   (:gen-class)
-  (:use compojure.core
-        ring.middleware.clj-params
-        ring.middleware.gzip)
   (:require murepl.commands
             [murepl.core                :as core]
             [murepl.events              :as events]
+
             [clojure.data.json          :as json]
             [clojure.tools.nrepl.server :as nrsrv]
+
+            [taoensso.timbre            :as log]
+
             [ring.adapter.jetty         :refer (run-jetty)]
+            [ring.middleware.clj-params :refer :all]
+            [ring.middleware.gzip       :refer :all]
+            [ring.util.response         :as resp]
+
+            [compojure.core             :refer :all]
             [compojure.handler          :as handler]
-            [compojure.route            :as route]
-            [ring.util.response         :as resp])
+            [compojure.route            :as route])
   (:import (org.webbitserver WebServer
                              WebServers
                              WebSocketHandler)
            (org.webbitserver.handler StaticFileHandler)))
-
-(def ws-port 8889)
 
 (defn build-response [body-map]
     {:status 200
@@ -44,10 +47,16 @@
             (for [[k v] (json/read-str raw)]
               [(keyword k) v])))))
 
+(defn log-command [player expr]
+  (do
+    (log/info (format "USER: %s COMMAND: %s" (:name player) expr))
+    player))
+
 (defroutes api-routes
   ;; index page. serves up repl
   (POST "/eval" [expr :as r]
         (-> (get-player-data r)
+            (log-command expr)
             (eval-command expr)
             (build-response)))
   (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
@@ -60,19 +69,27 @@
       (wrap-gzip)))
 
 (defn -main [& args]
-  (println "creating game world")
-  (core/init!)
 
-  (println "starting nrepl")
-  (defonce nrepl (nrsrv/start-server :port 7888))
+  (let [args     (apply array-map args)
+        host     (or (get args ":host") "localhost")
+        port     (Integer. (or (get args ":port") 8888))
+        ws-port  (Integer. (or (get args ":ws-port") 8889))
+        log-file (or (get args ":log-file") "/tmp/MUREPL.log")]
 
-  (let [host (if (nil? (first args))  "localhost" (first args))
-        port (if (nil? (second args)) 8888 (Integer. (second args)))]
+    (log/set-config! [:timestamp-pattern] "yyyy-MM-dd HH:mm:ss ZZ")
+    (log/set-config! [:appenders :spit :enabled?] true)
+    (log/set-config! [:shared-appender-config :spit-filename] log-file)
 
-    (println "starting jetty on" host "port" port)
+    (log/debug "STARTUP: creating game world")
+    (core/init!)
+
+    (log/debug "STARTUP: starting nrepl")
+    (defonce nrepl (nrsrv/start-server :port 7888))
+
+    (log/debug "STARTUP: starting jetty on" host "port" port)
     (run-jetty app {:port port :host host :join? false})
 
-    (println "starting webbit on localhost port" ws-port)
+    (log/debug "STARTUP: starting webbit on localhost port" ws-port)
     (doto (WebServers/createWebServer ws-port)
       (.add "/socket" events/ws)
       (.start))))
