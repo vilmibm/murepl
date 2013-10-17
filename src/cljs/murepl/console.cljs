@@ -22,6 +22,7 @@
 (def ^:private error-class "jquery-console-message-error")
 (def ^:private success-class "jquery-console-success")
 (def ^:private blank-class "jquery-console-message-value")
+(def ^:private prompt-selector ".jquery-console-prompt:last")
 
 (defn- map->js [m]
   (let [out (js-obj)]
@@ -81,12 +82,18 @@
       (if-let [error-msg (:error result)]
         (build-error error-msg)
         (do
-          (if-let [new-player-data (:player result)] 
+          (if-let [new-player-data (:player result)]
             (if (nil? player-data) (set-player-data new-player-data)))
           (build-success (:msg result)))))))
 
+(defn- prompt
+  ([]
+    (.html (js/jQuery prompt-selector)))
+  ([html]
+    (.html (js/jQuery prompt-selector) html)))
+
 (defn build-console [welcome-msg]
-  (.console (js/jQuery "#console") 
+  (.console (js/jQuery "#console")
             (map->js {:welcomeMessage welcome-msg
                       :promptLabel "> "
                       :commandValidate on-validate
@@ -110,6 +117,8 @@ If not, try (new-player \"your name\" \"a plaintext password\" \"a description o
             (def socket (js/WebSocket. (str/join "" ["ws://" (.-hostname (.-location js/window)) ":8889/socket"])))
             (set! js/controller (build-console welcome-msg))
             (set! (.-onmessage socket) (fn [data]
-                                         (let [msg (.-data data)]
-                                           (.log js/console "Got ws msg:" data)
-                                           (.msg js/controller msg)))))))
+                                          (let [msg (.-data data)
+                                                last-prompt (prompt)]
+                                            (.log js/console "Got ws msg:" data)
+                                            (.msg js/controller msg)
+                                            (prompt last-prompt)))))))
