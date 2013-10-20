@@ -6,11 +6,12 @@ second place.
 
 After the initial 48 hours of development MUREPL worked and was,
 subjectively, fun. But it was essentially a gamification of one giant
-security whole since I didn't have time to come up with a sandboxing
+security hole since I didn't have time to come up with a sandboxing
 system.
 
 It also crashes for other reasons and is in general pretty rough
-around the edges.
+around the edges. Actually, it's rough everywhere. It is rough. It
+will cut you.
 
 MUREPL's real life is just beginning as it will be improved and
 stabilized post-competition.
@@ -25,6 +26,7 @@ of MUREPL will run one day.
 * 0.1.1
  * towards a better (less interruptible) UI prompt (kalikborso)
  * logging (nathanielksmith)
+ * parameterized host, port (nathanielksmith)
 * 0.1.0
  * competition release. Works, but full of dragons.
 
