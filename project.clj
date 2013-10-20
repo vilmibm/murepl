@@ -1,6 +1,6 @@
-(defproject murepl "0.1.0-SNAPSHOT"
+(defproject murepl "0.1.1-SNAPSHOT"
   :description "Multi User REPL"
-  :url "http://murepl.clojurecup.com"
+  :url "http://github.com/nathanielksmith/murepl"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/clj"]
