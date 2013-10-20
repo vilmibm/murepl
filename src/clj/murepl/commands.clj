@@ -1,13 +1,35 @@
 (ns murepl.commands
-  (:require [murepl.core       :as core]
+  (:require [murepl.records    :refer :all]
+            [murepl.rocore     :as rocore]
+            [murepl.core       :as core]
             [murepl.common     :as common]
             [murepl.events     :as events]
             [clojure.data.json :as json]
-            [clojure.string    :as string]))
+            [clojure.string    :as string])
+  (:import [murepl.records MoveAction PlayerError]))
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
 (def no-such-user "Have you run connect or new-player yet?")
+
+(defn that-way [rooms room direction]
+  (rocore/lookup-room-by-id rooms (direction (:exits room))))
+
+(defn go' [direction]
+  (fn [player rooms current-room _]
+    (if-let [next-room (that-way rooms current-room direction)]
+      [(MoveAction. player next-room)]
+      (PlayerError. "There is nothing in that direction."))))
+
+(defn go-until-deadend [direction]
+  (fn [player rooms current-room _]
+    (loop [room current-room actions []]
+      (if (nil? room)
+        actions
+        (let [action ((go' direction) player rooms room _)]
+          (if (instance? PlayerError action)
+            (recur nil actions)
+            (recur (:room action) (conj actions action))))))))
 
 (defn say [msg]
   (fn [player-data]

@@ -3,19 +3,18 @@
             [clojure.set    :as set]
             [clojure.string :as string]))
 
-(declare ^:dynamic *world*)
-(declare ^:dynamic *players*)
-(declare ^:dynamic *rooms*)
-(declare ^:dynamic *items*)
+(declare world)
+(declare players)
+(declare rooms)
 
 (defn valid-auth? [auth player]
   (and (= (:name player) (:name auth))
        (= (:password player (:password auth)))))
 
-(defn find-room-by-name [room-name] (get @*rooms* room-name))
+(defn find-room-by-name [room-name] (get @rooms room-name))
 
 (defn find-player [player-data] 
-  (if-let [found-player (get @*players* (:uuid player-data))]
+  (if-let [found-player (get @players (:uuid player-data))]
     (if (valid-auth? player-data found-player)
       found-player)))
 
@@ -23,24 +22,24 @@
   (let [auth {:name name :password password}]
     (second
           (first
-           (filter #(valid-auth? auth (val %)) @*players*)))))
+           (filter #(valid-auth? auth (val %)) @players)))))
 
 (defn find-player-by-uuid [uuid]
-  (get @*players* uuid))
+  (get @players uuid))
 
 (defn lookup-location [player]
-  (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @*world*)))))
+  (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @world)))))
 
 (defn players-in-room [room]
   (map find-player-by-uuid
        (map first
-            (set/select #(= (:name room) (second %)) @*world*))))
+            (set/select #(= (:name room) (second %)) @world))))
 (defn others-in-room [player room]
   (filter #(not (= (:uuid player) (:uuid %)))
           (players-in-room room)))
 
 (defn duplicate-player-name? [player]
-  (not (empty? (filter #(= (:name player) (:name (val %))) @*players*))))
+  (not (empty? (filter #(= (:name player) (:name (val %))) @players))))
 
 (defn logout-player [player]
   (let [last-room (lookup-location player)
@@ -48,7 +47,7 @@
         uuid      (:uuid player)]
     (println "LOGGING OUT" uuid)
     (dosync
-     (alter *world* (fn [col] (set/select #(not= (first %) uuid) col))))
+     (alter world (fn [col] (set/select #(not= (first %) uuid) col))))
     observers))
 
 (defn look-at [player room]
@@ -67,23 +66,23 @@
 
 (defn add-room! [room]
   (dosync
-   (alter *rooms* #(assoc % (:name room) room))
+   (alter rooms #(assoc % (:name room) room))
    (doseq [[direction room-name] (seq (:exits room))]
      (let [exit-to     (find-room-by-name room-name)
            new-exits   (assoc (:exits exit-to) (common/opposite-dir direction) (:name room))
            new-exit-to (assoc exit-to :exits new-exits)]
-       (alter *rooms* #(assoc % (:name exit-to) new-exit-to))))))
+       (alter rooms #(assoc % (:name exit-to) new-exit-to))))))
 
 (defn place-player! [player room]
   (dosync
    (let [uuid      (:uuid player)
          room-name (:name room)]
-     (alter *world* (fn [col] (set/select #(not (= (first %) uuid)) col)))
-     (alter *world* #(conj % [uuid room-name])))))
+     (alter world (fn [col] (set/select #(not (= (first %) uuid)) col)))
+     (alter world #(conj % [uuid room-name])))))
 
 (defn add-player! [player]
   (dosync
-   (alter *players* #(assoc % (:uuid player) player)))
+   (alter players #(assoc % (:uuid player) player)))
   (place-player! player (find-room-by-name "Lobby"))
   player)
 
@@ -98,16 +97,16 @@
   (contains? (:exits (lookup-location player)) direction))
 
 (defn init! []
-  (defonce ^:dynamic *world*   (ref #{})) ;set of tuples that map uuid x room name
-  (defonce ^:dynamic *players* (ref {}))
-  (defonce ^:dynamic *rooms*   (ref {}))
-  (defonce ^:dynamic *items*   (ref {}))
+  (defonce world   (ref #{})) ;set of tuples that map uuid x room name
+  (defonce players (ref {}))
+  (defonce rooms   (ref {}))
+  (defonce items   (ref {}))
   (add-room! {:name "Lobby" :desc "A windowless room." :exits {}}))
 
 (defn reset-game! []
   (dosync
-   (ref-set *world*   #{})
-   (ref-set *players* {})
-   (ref-set *rooms*   {})
-   (ref-set *items*   {}))
+   (ref-set world   #{})
+   (ref-set players {})
+   (ref-set rooms   {})
+   (ref-set items   {}))
   (init!))
