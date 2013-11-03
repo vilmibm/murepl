@@ -15,21 +15,40 @@
 (defn that-way [rooms room direction]
   (rocore/lookup-room-by-id rooms (direction (:exits room))))
 
-(defn go' [direction]
-  (fn [player rooms current-room _]
-    (if-let [next-room (that-way rooms current-room direction)]
-      [(MoveAction. player next-room)]
-      (PlayerError. "There is nothing in that direction."))))
+(defmacro defcmd [name argv body]
+  `(defn ~name ~argv
+     (fn ~(into [] (map symbol ["player" "rooms" "current-room"]))
+       ~body)))
 
-(defn go-until-deadend [direction]
-  (fn [player rooms current-room _]
-    (loop [room current-room actions []]
-      (if (nil? room)
-        actions
-        (let [action ((go' direction) player rooms room _)]
-          (if (instance? PlayerError action)
-            (recur nil actions)
-            (recur (:room action) (conj actions action))))))))
+(defcmd go [direction]
+  (if-let [next-room (that-way rooms current-room direction)]
+    [(MoveAction. player next-room)]
+    (PlayerError. "There is nothing in that direction.")))
+
+(defcmd go-until-deadend [direction]
+  (loop [room current-room actions []]
+    (if (nil? room)
+      actions
+      (let [action ((go direction) player rooms room)]
+        (if (instance? PlayerError action)
+          (recur nil actions)
+          (recur (:room action) (conj actions action)))))))
+
+(defn connect [name password]
+  (fn [_ _ _]
+    (if-let [player (core/find-player-by-auth name password)]
+      (do
+        (println "FOUND PLAYER" player)
+        (core/place-player! player (core/find-room-by-name "Lobby"))
+        {:player (json/write-str player) :msg "Welcome back."})
+      {:error "Sorry, no such player exists."})))
+
+;;; NEW ^
+
+
+
+
+
 
 (defn say [msg]
   (fn [player-data]
@@ -61,7 +80,7 @@
       {:result {} :msg (core/look-at player (core/lookup-location player))}
       {:error no-such-user})))
 
-(defn go [direction]
+(defn go' [direction]
     (fn [player]
       (if (not (common/valid-direction? direction))
         {:error "Sorry, that's not a valid direction"}
@@ -93,15 +112,6 @@
           (let [result (core/add-room! room-data)]
             {:result result :msg "You added a room."})))
       {:error no-such-user})))
-
-(defn connect [name password]
-  (fn [_]
-    (if-let [player (core/find-player-by-auth name password)]
-      (do
-        (println "FOUND PLAYER" player)
-        (core/place-player! player (core/find-room-by-name "Lobby"))
-        {:player (json/write-str player) :msg "Welcome back."})
-      {:error "Sorry, no such player exists."})))
 
 (defn new-player [name password desc]
   (fn [current-player]

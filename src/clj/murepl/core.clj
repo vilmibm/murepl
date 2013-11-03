@@ -1,11 +1,41 @@
 (ns murepl.core
   (:require [murepl.common  :as common]
             [clojure.set    :as set]
-            [clojure.string :as string]))
+            [clojure.string :as string])
+  (:import [murepl.records MoveAction Room Player PlayerError]))
 
 (declare world)
 (declare players)
 (declare rooms)
+(declare passwords)
+
+;; TODO handle this more cleanly
+(declare place-player!)
+
+(defn handle-move-action [action]
+  (let [player (:player action)
+        room   (:room action)]
+    (place-player! player room)
+    (:desc room)))
+
+(defn execute-action
+  "TODO"
+  [action]
+  (case action
+    MoveAction (handle-move-action action)
+    (PlayerError. "Unrecognized action type")))
+
+
+(defn execute-actions 
+  "Given a list of action records, handle them all. Returns an
+homomorphic vector of messages to be returns by the API call that triggered these actions."
+  [actions]
+  (map execute-action actions))
+
+(defn get-ro-rooms 
+  "Return a copy of the rooms data structure"
+  []
+  @rooms)
 
 (defn valid-auth? [auth player]
   (and (= (:name player) (:name auth))
@@ -101,6 +131,7 @@
   (defonce players (ref {}))
   (defonce rooms   (ref {}))
   (defonce items   (ref {}))
+  (defonce passwords (ref {}))
   (add-room! {:name "Lobby" :desc "A windowless room." :exits {}}))
 
 (defn reset-game! []
@@ -108,5 +139,6 @@
    (ref-set world   #{})
    (ref-set players {})
    (ref-set rooms   {})
-   (ref-set items   {}))
-  (init!))
+   (ref-set items   {})
+   (ref-set passwords {})
+  (init!)))

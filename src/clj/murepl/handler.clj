@@ -7,6 +7,9 @@
             [clojure.data.json          :as json]
             [clojure.tools.nrepl.server :as nrsrv]
 
+            [clojail.core               :refer (sandbox)]
+            [clojail.testers            :refer (secure-tester-without-def)]
+
             [taoensso.timbre            :as log]
 
             [ring.adapter.jetty         :refer (run-jetty)]
@@ -17,48 +20,78 @@
             [compojure.core             :refer :all]
             [compojure.handler          :as handler]
             [compojure.route            :as route])
-  (:import (org.webbitserver WebServer
-                             WebServers
-                             WebSocketHandler)
-           (org.webbitserver.handler StaticFileHandler)))
+  (:import 
+   (murepl.records Player
+                   PlayerError)
+
+   (org.webbitserver WebServer
+                     WebServers
+                     WebSocketHandler)
+
+   (org.webbitserver.handler StaticFileHandler)))
 
 (defn build-response [body-map]
     {:status 200
      :headers {"Content-Type" "application/clojure; charset=utf-8"}
      :body (pr-str body-map)})
 
+(defn build-error-map [e]
+    {:error (str "I did not understand you. Please try again. Error was: " (.getMessage e))})
+
 (defn error-fn [e]
   (fn [_]
-    {:error (str "I did not understand you. Please try again. Error was: " (.getMessage e))}))
+    (build-error-map e)))
 
-(defn with-player-fn [expr]
+(defn eval-command [expr]
   (try
     (binding [*ns* (find-ns 'murepl.commands)]
       (eval expr))
     (catch Exception e (error-fn e))))
 
-(defn eval-command [player expr] ((with-player-fn expr) player))
+(defn get-sandbox []
+  (sandbox secure-tester-without-def :timeout 5000))
+
+(defn eval-command [player expr] 
+  (let [sb           (get-sandbox)
+        rooms        (core/get-ro-rooms)
+        current-room (core/lookup-location player)]
+    ;; TODO try, catch here as well
+    (try
+      (sb '((eval-command expr) player rooms current-room))
+      (catch Exception e [(build-error-map e)]))))
 
 (defn get-player-data [request]
+  ;; TODO validate player data against core
   (let [raw (get (:headers request) "player")]
     (if (nil? raw)
       nil
-      (into {}
-            (for [[k v] (json/read-str raw)]
-              [(keyword k) v])))))
+      (let [player-data (into {} (for [[k v] (json/read-str raw)]
+                                   [(keyword k) v]))]
+        (core/find-player player-data)))))
 
 (defn log-command [player expr]
   (do
     (log/info (format "USER: %s COMMAND: %s" (:name player) expr))
     player))
 
+(defn error-action?
+  "Predicate for determining if a given action record is an error"
+  [action]
+  (instance? PlayerError action))
+
 (defroutes api-routes
   ;; index page. serves up repl
   (POST "/eval" [expr :as r]
-        (-> (get-player-data r)
-            (log-command expr)
-            (eval-command expr)
-            (build-response)))
+        (if-let [player (get-player-data r)]
+                (do
+                  (log-command player expr)
+                  (let [actions (eval-command player expr)]
+                     (if (some error-action? actions)
+                       {:error (str (concat ["Something(s) went wrong executing that command: "]
+                                            (map :msg (filter error-action? actions))))}
+                       (build-response
+                        (core/execute-actions actions))))))
+                {:status 403})
   (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
 
   (route/resources "/"))
