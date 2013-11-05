@@ -19,6 +19,7 @@
                  [clojail "1.0.6"]
                  [compojure "1.1.5"]
                  [http-kit "2.1.11"]
+                 [prismatic/dommy "0.1.1"]
                  [ring-clj-params "0.1.0"]
                  [ring/ring-json "0.2.0"]
                  [ring/ring-core "1.1.3"]

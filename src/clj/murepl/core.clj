@@ -25,7 +25,6 @@
     MoveAction (handle-move-action action)
     (PlayerError. "Unrecognized action type")))
 
-
 (defn execute-actions 
   "Given a list of action records, handle them all. Returns an
 homomorphic vector of messages to be returns by the API call that triggered these actions."
@@ -37,6 +36,12 @@ homomorphic vector of messages to be returns by the API call that triggered thes
   []
   @rooms)
 
+(defn valid-player? [credentials]
+  (not (empty? (set/select #(and 
+                (= (:name credentials)     (first %)) 
+                (= (:password credentials) (second %))) 
+              @passwords))))
+
 (defn valid-auth? [auth player]
   (and (= (:name player) (:name auth))
        (= (:password player (:password auth)))))
@@ -44,7 +49,7 @@ homomorphic vector of messages to be returns by the API call that triggered thes
 (defn find-room-by-name [room-name] (get @rooms room-name))
 
 (defn find-player [player-data] 
-  (if-let [found-player (get @players (:uuid player-data))]
+  (if-let [found-player (get @players (:id player-data))]
     (if (valid-auth? player-data found-player)
       found-player)))
 
@@ -58,23 +63,23 @@ homomorphic vector of messages to be returns by the API call that triggered thes
   (get @players uuid))
 
 (defn lookup-location [player]
-  (find-room-by-name (second (first (set/select #(= (:uuid player) (first %)) @world)))))
+  (find-room-by-name (second (first (set/select #(= (:id player) (first %)) @world)))))
 
 (defn players-in-room [room]
   (map find-player-by-uuid
        (map first
             (set/select #(= (:name room) (second %)) @world))))
 (defn others-in-room [player room]
-  (filter #(not (= (:uuid player) (:uuid %)))
+  (filter #(not (= (:id player) (:id %)))
           (players-in-room room)))
 
-(defn duplicate-player-name? [player]
-  (not (empty? (filter #(= (:name player) (:name (val %))) @players))))
+(defn duplicate-player-name? [name]
+  (not (empty? (filter #(= name (:name (val %))) @players))))
 
 (defn logout-player [player]
   (let [last-room (lookup-location player)
         observers (others-in-room player last-room)
-        uuid      (:uuid player)]
+        uuid      (:id player)]
     (println "LOGGING OUT" uuid)
     (dosync
      (alter world (fn [col] (set/select #(not= (first %) uuid) col))))
@@ -105,14 +110,15 @@ homomorphic vector of messages to be returns by the API call that triggered thes
 
 (defn place-player! [player room]
   (dosync
-   (let [uuid      (:uuid player)
+   (let [uuid      (:id player)
          room-name (:name room)]
      (alter world (fn [col] (set/select #(not (= (first %) uuid)) col)))
      (alter world #(conj % [uuid room-name])))))
 
-(defn add-player! [player]
+(defn add-player! [player password]
   (dosync
-   (alter players #(assoc % (:uuid player) player)))
+   (alter players #(assoc % (:id player) player))
+   (alter passwords #(conj % [(:name player) password])))
   (place-player! player (find-room-by-name "Lobby"))
   player)
 
@@ -131,7 +137,7 @@ homomorphic vector of messages to be returns by the API call that triggered thes
   (defonce players (ref {}))
   (defonce rooms   (ref {}))
   (defonce items   (ref {}))
-  (defonce passwords (ref {}))
+  (defonce passwords (ref #{}))
   (add-room! {:name "Lobby" :desc "A windowless room." :exits {}}))
 
 (defn reset-game! []
@@ -140,5 +146,5 @@ homomorphic vector of messages to be returns by the API call that triggered thes
    (ref-set players {})
    (ref-set rooms   {})
    (ref-set items   {})
-   (ref-set passwords {})
+   (ref-set passwords #{})
   (init!)))

@@ -113,6 +113,7 @@
             {:result result :msg "You added a room."})))
       {:error no-such-user})))
 
+;; DEPRECATED
 (defn new-player [name password desc]
   (fn [current-player]
     (let [player-data {:name name :password password :desc desc}]

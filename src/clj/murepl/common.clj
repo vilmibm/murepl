@@ -2,6 +2,8 @@
 
 (def directions [:north :south :west :east :up :down])
 
+(defn uuid [] (str (java.util.UUID/randomUUID)))
+
 (defn valid-direction? [direction]
   (some #{direction} directions))
 

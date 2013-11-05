@@ -1,6 +1,7 @@
 (ns murepl.handler
   (:gen-class)
   (:require murepl.commands
+            [murepl.common              :as common]
             [murepl.core                :as core]
             [murepl.events              :as events]
 
@@ -20,7 +21,7 @@
             [compojure.core             :refer :all]
             [compojure.handler          :as handler]
             [compojure.route            :as route])
-  (:import 
+  (:import
    (murepl.records Player
                    PlayerError)
 
@@ -51,7 +52,7 @@
 (defn get-sandbox []
   (sandbox secure-tester-without-def :timeout 5000))
 
-(defn eval-command [player expr] 
+(defn eval-command [player expr]
   (let [sb           (get-sandbox)
         rooms        (core/get-ro-rooms)
         current-room (core/lookup-location player)]
@@ -92,6 +93,25 @@
                        (build-response
                         (core/execute-actions actions))))))
                 {:status 403})
+
+  (POST "/login" [creds :as r]
+        ;; TODO wtf
+        (let [creds (:clj-params r)]
+          (log/info (format "LOGIN FROM %s" creds))
+          (if (core/valid-player? creds)
+            {:status 200}
+            {:status 403})))
+
+  (POST "/create" [data :as r]
+        ;; TODO wtf
+        (let [data (:clj-params r)]
+          (log/info (format "CREATE FROM %s" data))
+          (if (core/duplicate-player-name? (:name data))
+            {:status 400 :body (pr-str {:error "Name already taken."})}
+            (let [new-player (Player. (common/uuid) (:name data) (:desc data))]
+              (core/add-player! new-player (:password data))
+              {:status 200}))))
+
   (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
 
   (route/resources "/"))

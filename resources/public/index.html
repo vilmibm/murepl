@@ -11,7 +11,25 @@
   <title>murepl</title>
 </head>
 <body>
-    <div class="console" id="console"></div>
+    <div id="auth-controls">
+         <form id="login">
+             <input type="text" name="name" placeholder="name"/>
+             <input type="password" name="password" placeholder="password" />
+             <button>login</button>
+         </form>
+         <form id="create">
+             <input type="text" name="name" placeholder="name"/>
+             <input type="password" name="password" placeholder="password" />
+             <input type="text" name="desc" placeholder="describe yourself." />
+             <button>create new</button>
+         </form>
+    </div>
+    <div class="console" id="console" style="display:none"></div>
+    <!--
+    <h2>Connection:
+        <span id="connection-broken" style="color:red">X</span>
+        <span id="connection-ok" style="color: green; display:none">&#10003;</span>
+    </h2> -->
     <div id="docs">
         <h3>MUREPL is a clojure repl that runs against a restricted namespace of MUD commands.</h3>
         <table id="commands">
