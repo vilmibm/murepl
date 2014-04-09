@@ -63,7 +63,9 @@
                     (format "Exits: %s" (string/join ", " exit-names))
                     "There is no way out.")])))
 
-
+(defn modify-player! [player]
+  (dosync
+   (alter *players* #(assoc % (:uuid player) player))))
 
 (defn add-room! [room]
   (dosync
@@ -82,8 +84,7 @@
      (alter *world* #(conj % [uuid room-name])))))
 
 (defn add-player! [player]
-  (dosync
-   (alter *players* #(assoc % (:uuid player) player)))
+  (modify-player! player)
   (place-player! player (find-room-by-name "Lobby"))
   player)
 

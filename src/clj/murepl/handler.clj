@@ -2,7 +2,7 @@
   (:gen-class)
   (:require murepl.commands
             [murepl.core                :as core]
-            [murepl.events              :as events]
+            [murepl.net.websocket       :as ws]
 
             [clojure.data.json          :as json]
             [clojure.tools.nrepl.server :as nrsrv]
@@ -91,5 +91,5 @@
 
     (log/debug "STARTUP: starting webbit on localhost port" ws-port)
     (doto (WebServers/createWebServer ws-port)
-      (.add "/socket" events/ws)
+      (.add "/socket" ws/ws)
       (.start))))

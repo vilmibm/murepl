@@ -1,51 +1,31 @@
 (ns murepl.events
   (:require [murepl.common      :refer :all]
-            [murepl.core        :as core]
-            [org.httpkit.server :refer :all]
-            [clojure.set        :as set]
-            [clojure.data.json  :as json])
-  (:import (org.webbitserver WebServer
-                             WebServers
-                             WebSocketHandler)
-           (org.webbitserver.handler StaticFileHandler)))
+            [murepl.core        :as core]))
 
-(defonce clients (atom {}))
-
-(defn con-for-player [player]
-  (get (set/map-invert @clients) (:uuid player)))
-
-(defn send-msg-to-player [player msg]
-  (if-let [con (con-for-player player)]
+(defn send-msg [player msg]
+  ;; Invokes player's send-function function.
+  (if-let [send-function (:send-function player)] 
     (do
-      (println "Trying to send" con msg)
-      (.send con msg))))
+      (send-function msg))))
 
 (defn notify-players [players msg]
-  (println players msg)
+  (println "Sending:" msg)
   (doseq [player players]
-    (send-msg-to-player player msg)))
+    (send-msg player msg)))
 
-(defn ws-open [con]
-  (println "connected" con)
-  (swap! clients assoc con nil))
+(defn connect [uuid function]
+  "Subscribe player to the events framework by giving it a send function,
+   probably associated with its network connection that will be used to pass
+   event messages to it."
+  (let [player (core/find-player-by-uuid uuid) 
+        observers (core/others-in-room player (core/lookup-location player))] 
+    (core/modify-player! (assoc player :send-function function))
+    (notify-players observers (format "%s slowly fades into existence." (:name player)))))
 
-(defn ws-close [con]
-  (println "CONNECTION CLOSED: " con)
-  (let [player    (core/find-player-by-uuid (get @clients con))
-        observers (core/logout-player player)]
-    (notify-players observers (format "%s fades slowly away." (:name player))))
-  (swap! clients dissoc con))
+(defn disconnect [uuid]
+  "Unsubscribe player identified by uuid from the events framework."
+  (let [player (core/find-player-by-uuid uuid) 
+        observers (core/others-in-room player (core/lookup-location player))] 
+    (core/modify-player! (dissoc player :send-function))
+    (notify-players observers (format "%s fades slowly away." (:name player)))))
 
-(defn ws-message [con uuid]
-  (println "GOT UUID MSG" uuid)
-  (let [player    (core/find-player-by-uuid uuid)
-        observers (core/others-in-room player (core/lookup-location player))]
-  (swap! clients assoc con uuid)
-  (notify-players observers (format "%s slowly fades into existence." (:name player)))))
-
-(def ws
-  (proxy [WebSocketHandler] []
-    (onOpen [c] (ws-open c))
-    (onClose [c] (ws-close c))
-    (onMessage [c m] (ws-message c m))))
-    
