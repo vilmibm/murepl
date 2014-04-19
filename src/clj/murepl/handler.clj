@@ -1,8 +1,9 @@
 (ns murepl.handler
   (:gen-class)
-  (:require murepl.commands
+  (:require [murepl.commands]
             [murepl.core                :as core]
             [murepl.net.websocket       :as ws]
+            [murepl.net.telnet       :as telnet]
 
             [clojure.data.json          :as json]
             [clojure.tools.nrepl.server :as nrsrv]
@@ -59,6 +60,7 @@
         host     (or (get args ":host") "localhost")
         port     (Integer. (or (get args ":port") 8888))
         ws-port  (Integer. (or (get args ":ws-port") 8889))
+        telnet-port  (Integer. (or (get args ":telnet-port") 8891))
         log-file (or (get args ":log-file") "/tmp/MUREPL.log")]
 
     (log/set-config! [:timestamp-pattern] "yyyy-MM-dd HH:mm:ss ZZ")
@@ -70,6 +72,9 @@
 
     (log/debug "STARTUP: starting nrepl")
     (defonce nrepl (nrsrv/start-server :port 7888))
+
+    (log/debug "STARTUP: starting telnet server on " host " port " telnet-port)
+    (telnet/start-server telnet-port)
 
     (log/debug "STARTUP: starting jetty on" host "port" port)
     (run-jetty app {:port port :host host :join? false})
