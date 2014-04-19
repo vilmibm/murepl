@@ -28,12 +28,9 @@
      :body (pr-str body-map)})
 
 (defn get-player-data [request]
-  (let [raw (get (:headers request) "player")]
-    (if (nil? raw)
-      nil
-      (into {}
-            (for [[k v] (json/read-str raw)]
-              [(keyword k) v])))))
+  (if-let [raw (get (:headers request) "player")] 
+    (json/read-str raw :key-fn keyword) 
+    nil))
 
 (defn log-command [player expr]
   (do
