@@ -1,12 +1,36 @@
 (ns murepl.core
-  (:require [murepl.common  :as common]
-            [clojure.set    :as set]
-            [clojure.string :as string]))
+  (:require [murepl.common     :as common]
+            [clojure.set       :as set]
+            [clojure.string    :as string]
+            [taoensso.timbre   :as log]))
 
 (declare ^:dynamic *world*)
 (declare ^:dynamic *players*)
 (declare ^:dynamic *rooms*)
 (declare ^:dynamic *items*)
+
+(defn log-command [player-data expr] 
+  (log/info (format "USER: %s COMMAND: %s" (:name player-data) expr))
+  player-data)
+
+(defn error-fn [e]
+  (fn [_]
+    {:error (str "I did not understand you. Please try again. Error was: "
+                 (.getMessage e))}))
+
+(defn with-player-fn [expr]
+  (try
+    (binding [*ns* (find-ns 'murepl.commands)]
+      (eval expr))
+    (catch Exception e (error-fn e))))
+
+(defn eval-command [player expr] ((with-player-fn expr) player))
+
+(defn eval-command2 [player-data expr]
+  (try
+    (binding [*ns* (find-ns 'murepl.commands)]
+      (eval (flatten (list expr player-data))))
+    (catch Exception e (error-fn e))))
 
 (defn valid-auth? [auth player]
   (and (= (:name player) (:name auth))

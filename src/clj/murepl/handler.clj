@@ -27,18 +27,6 @@
      :headers {"Content-Type" "application/clojure; charset=utf-8"}
      :body (pr-str body-map)})
 
-(defn error-fn [e]
-  (fn [_]
-    {:error (str "I did not understand you. Please try again. Error was: " (.getMessage e))}))
-
-(defn with-player-fn [expr]
-  (try
-    (binding [*ns* (find-ns 'murepl.commands)]
-      (eval expr))
-    (catch Exception e (error-fn e))))
-
-(defn eval-command [player expr] ((with-player-fn expr) player))
-
 (defn get-player-data [request]
   (let [raw (get (:headers request) "player")]
     (if (nil? raw)
@@ -56,8 +44,8 @@
   ;; index page. serves up repl
   (POST "/eval" [expr :as r]
         (-> (get-player-data r)
-            (log-command expr)
-            (eval-command expr)
+            (core/log-command expr)
+            (core/eval-command expr)
             (build-response)))
   (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
 
