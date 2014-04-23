@@ -1,8 +1,9 @@
 (ns murepl.handler
   (:gen-class)
-  (:require murepl.commands
+  (:require [murepl.commands]
             [murepl.core                :as core]
-            [murepl.events              :as events]
+            [murepl.net.websocket       :as ws]
+            [murepl.net.telnet       :as telnet]
 
             [clojure.data.json          :as json]
             [clojure.tools.nrepl.server :as nrsrv]
@@ -27,25 +28,10 @@
      :headers {"Content-Type" "application/clojure; charset=utf-8"}
      :body (pr-str body-map)})
 
-(defn error-fn [e]
-  (fn [_]
-    {:error (str "I did not understand you. Please try again. Error was: " (.getMessage e))}))
-
-(defn with-player-fn [expr]
-  (try
-    (binding [*ns* (find-ns 'murepl.commands)]
-      (eval expr))
-    (catch Exception e (error-fn e))))
-
-(defn eval-command [player expr] ((with-player-fn expr) player))
-
 (defn get-player-data [request]
-  (let [raw (get (:headers request) "player")]
-    (if (nil? raw)
-      nil
-      (into {}
-            (for [[k v] (json/read-str raw)]
-              [(keyword k) v])))))
+  (if-let [raw (get (:headers request) "player")] 
+    (json/read-str raw :key-fn keyword) 
+    nil))
 
 (defn log-command [player expr]
   (do
@@ -56,8 +42,8 @@
   ;; index page. serves up repl
   (POST "/eval" [expr :as r]
         (-> (get-player-data r)
-            (log-command expr)
-            (eval-command expr)
+            (core/log-command expr)
+            (core/eval-command expr)
             (build-response)))
   (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
 
@@ -74,6 +60,7 @@
         host     (or (get args ":host") "localhost")
         port     (Integer. (or (get args ":port") 8888))
         ws-port  (Integer. (or (get args ":ws-port") 8889))
+        telnet-port  (Integer. (or (get args ":telnet-port") 8891))
         log-file (or (get args ":log-file") "/tmp/MUREPL.log")]
 
     (log/set-config! [:timestamp-pattern] "yyyy-MM-dd HH:mm:ss ZZ")
@@ -86,10 +73,13 @@
     (log/debug "STARTUP: starting nrepl")
     (defonce nrepl (nrsrv/start-server :port 7888))
 
+    (log/debug "STARTUP: starting telnet server on " host " port " telnet-port)
+    (telnet/start-server telnet-port)
+
     (log/debug "STARTUP: starting jetty on" host "port" port)
     (run-jetty app {:port port :host host :join? false})
 
     (log/debug "STARTUP: starting webbit on localhost port" ws-port)
     (doto (WebServers/createWebServer ws-port)
-      (.add "/socket" events/ws)
+      (.add "/socket" ws/ws)
       (.start))))

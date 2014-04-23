@@ -16,6 +16,10 @@
                  [com.taoensso/timbre "2.6.2"]
                  [amalloy/ring-gzip-middleware "0.1.2"]
                  [compojure "1.1.5"]
+
+                 [aleph "0.3.2"]
+                 [lamina "0.5.2"]
+
                  [http-kit "2.1.11"]
                  [ring-clj-params "0.1.0"]
                  [ring/ring-json "0.2.0"]

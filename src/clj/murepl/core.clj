@@ -1,12 +1,36 @@
 (ns murepl.core
-  (:require [murepl.common  :as common]
-            [clojure.set    :as set]
-            [clojure.string :as string]))
+  (:require [murepl.common     :as common]
+            [clojure.set       :as set]
+            [clojure.string    :as string]
+            [taoensso.timbre   :as log]))
 
 (declare ^:dynamic *world*)
 (declare ^:dynamic *players*)
 (declare ^:dynamic *rooms*)
 (declare ^:dynamic *items*)
+
+(defn log-command [player-data expr] 
+  (log/info (format "USER: %s COMMAND: %s" (:name player-data) expr))
+  player-data)
+
+(defn error-fn [e]
+  (fn [_]
+    {:error (str "I did not understand you. Please try again. Error was: "
+                 (.getMessage e))}))
+
+(defn with-player-fn [expr]
+  (try
+    (binding [*ns* (find-ns 'murepl.commands)]
+      (eval expr))
+    (catch Exception e (error-fn e))))
+
+(defn eval-command [player expr] ((with-player-fn expr) player))
+
+(defn eval-command2 [player-data expr]
+  (try
+    (binding [*ns* (find-ns 'murepl.commands)]
+      (eval (flatten (list expr player-data))))
+    (catch Exception e (error-fn e))))
 
 (defn valid-auth? [auth player]
   (and (= (:name player) (:name auth))
@@ -63,7 +87,9 @@
                     (format "Exits: %s" (string/join ", " exit-names))
                     "There is no way out.")])))
 
-
+(defn modify-player! [player]
+  (dosync
+   (alter *players* #(assoc % (:uuid player) player))))
 
 (defn add-room! [room]
   (dosync
@@ -82,8 +108,7 @@
      (alter *world* #(conj % [uuid room-name])))))
 
 (defn add-player! [player]
-  (dosync
-   (alter *players* #(assoc % (:uuid player) player)))
+  (modify-player! player)
   (place-player! player (find-room-by-name "Lobby"))
   player)
 
