@@ -23,6 +23,8 @@ of MUREPL will run one day.
 
 # changelog
 
+* 0.2.0
+ * Refactor events stuff and add basic telnet support (wayner)
 * 0.1.1
  * towards a better (less interruptible) UI prompt (kalikborso)
  * logging (nathanielksmith)
@@ -37,7 +39,8 @@ of MUREPL will run one day.
 
 # contributors
 
- * @kalikborso
+ * [kaborso](https://github.com/kaborso)
+ * [waynr](https://github.com/waynr)
 
 # license
 
