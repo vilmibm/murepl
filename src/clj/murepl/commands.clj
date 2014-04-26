@@ -54,7 +54,7 @@
                     enter-observers (core/others-in-room player new-room)
                     came-from       (common/pretty-came-from (common/opposite-dir direction))]
                 (events/notify-players leave-observers (format "%s leaves %s" player-name (name direction)))
-                (events/notify-players enter-observers 
+                (events/notify-players enter-observers
                                        (format "%s enters from %s" player-name came-from))
                 {:result {} :msg (core/look-at player new-room)}))
             {:error "You can't go that way."}))

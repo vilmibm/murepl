@@ -9,7 +9,7 @@
 (declare ^:dynamic *rooms*)
 (declare ^:dynamic *items*)
 
-(defn log-command [player-data expr] 
+(defn log-command [player-data expr]
   (log/info (format "USER: %s COMMAND: %s" (:name player-data) expr))
   player-data)
 
@@ -38,7 +38,7 @@
 
 (defn find-room-by-name [room-name] (get @*rooms* room-name))
 
-(defn find-player [player-data] 
+(defn find-player [player-data]
   (if-let [found-player (get @*players* (:uuid player-data))]
     (if (valid-auth? player-data found-player)
       found-player)))
@@ -78,7 +78,7 @@
 (defn look-at [player room]
   (let [other-player-names (map :name (others-in-room player room))
         exit-names         (for [[k v] (:exits room)] (name k))]
-    (string/join "\n" 
+    (string/join "\n"
                  [(format "You find yourself in the %s: %s" (:name room) (:desc room))
                   (if (not (empty? other-player-names))
                     (format "Others here: %s" (string/join ", " other-player-names))
@@ -113,13 +113,13 @@
   player)
 
 (defn move-player! [direction player]
-  (let [current-room (lookup-location player) 
+  (let [current-room (lookup-location player)
         exit-to-name (get (:exits current-room) direction)]
     (if (nil? exit-to-name)
       nil ;; TODO throw
       (place-player! player (find-room-by-name exit-to-name)))))
 
-(defn player-can-move? [player direction] 
+(defn player-can-move? [player direction]
   (contains? (:exits (lookup-location player)) direction))
 
 (defn init! []
