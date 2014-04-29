@@ -3,7 +3,6 @@
   :url "http://github.com/nathanielksmith/murepl"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :source-paths ["src/clj"]
   :main murepl.handler
   :ring {:handler murepl.handler/app}
   :min-lein-version "2.0.0"
@@ -31,4 +30,3 @@
                                    :output-to "resources/public/js/murepl.js"
                                    :pretty-print true
                                    }}]})
-
