@@ -27,7 +27,10 @@
   (resources "/")
 
   (POST "/eval" [expr :as r]
-        (-> (get-player-data r)
-            (core/log-command expr)
-            (core/eval-command expr)
-            (build-response))))
+        {:status 200
+         :headers {"Content-Type" "application/json; charset=utf-8"}
+         :body (json/encode {:msg "HI" :error "FOO"})}))
+        ;(-> (get-player-data r)
+        ;    (core/log-command expr)
+        ;    (core/eval-command expr)
+        ;    (build-response))))

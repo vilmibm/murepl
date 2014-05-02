@@ -1,22 +1,14 @@
 // originally inspired by the clojurescript console by Fogus.
 // depends on jquery, jquery.console
 (function (port) {
-  var main,
-  playerData,
-  socket,
-  console,
-  validateCommand,
-  handleCommand,
-  handleSocketMessage,
-  prompt,
-  buildMessage,
+  var playerData, // nasty state
   errorClass     = "jquery-console-message-error",
   successClass   = "jquery-console-success",
   blankClass     = "jquery-console-message-value",
   promptSelector = ".jquery-console-prompt:last",
-  welcomeMessage = 'Welcome to MUREPL!\nIf you already have a character, run (connect "you name" "your password").\nIf not, try (ew-player "your name" "a plaintext, insecure password" "a description of yourself")';
+  welcomeMessage = 'Welcome to MUREPL!\nIf you already have a character, run (connect "your name" "your password").\nIf not, try (new-player "your name" "a plaintext, insecure password" "a description of yourself")';
 
-  prompt = function (html) {
+  function prompt (html) {
     // Get or set the prompt.
     var $prompt = $(promptSelector);
 
@@ -28,33 +20,34 @@
     }
   };
 
-  buildMessage = function (className, msg) {
+  function buildMessage (className, msg) {
     // Build a message for display by the console.
-    return {
-      className: className
+    return [{
+      className: className,
       msg: msg
-    };
+    }];
   };
 
-  validateCommand = function (input) {
+  function validateCommand (input) {
     // Prevalidates a command before it is sent to backend.
     return input.length > 0;
   };
 
-  handleCommand = function (socket, line) {
+  function handleCommand (socket, line) {
     // Process a submitted command
     var input = line.trim(),
     result;
 
-    if (line.startswith(";")) {
+    if (line.startsWith(";")) {
       return buildMessage(blankClass, "");
     }
 
-    $.ajax({
-      url: '/eval',
+    // Why not blocking, here?
+    $.ajax('/eval', {
       data: {expr: line},
       async: false,
       success: function (data) { result = data; },
+      error: function () { throw arguments; },
       type: "POST",
       dataType: "json",
       contentType: "application/json; charset=utf-8"
@@ -75,7 +68,7 @@
     return buildMessage(successClass, result.msg);
   };
 
-  handleSocketMessage = function (console_, data) {
+  function handleSocketMessage (console_, data) {
     // Deal with data coming from the websocket. Should be bound with
     // an active console before use as an onMessage handler.
 
@@ -84,7 +77,8 @@
     prompt(lastPrompt);
   };
 
-  main = function () {
+  function _main_ () {
+    var socket, console_;
 
     socket = new WebSocket("ws://" + window.location.hostname + ":" + port + "/socket");
 
@@ -102,8 +96,10 @@
       promptHistory: true
     });
 
+    console__ = console_;
+
     socket.onMessage = handleSocketMessage.bind(null, console_);
   };
 
-  $(main);
+  $(_main_);
 })(8889);
