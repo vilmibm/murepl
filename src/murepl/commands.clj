@@ -3,7 +3,8 @@
             [murepl.common     :as common]
             [murepl.events     :as events]
             [clojure.data.json :as json]
-            [clojure.string    :as string]))
+            [clojure.string    :as string]
+            [taoensso.timbre   :as log]))
 
 (defn uuid [] (str (java.util.UUID/randomUUID)))
 
@@ -83,6 +84,7 @@
 
 (defn new-player [name password desc]
   (fn [current-player]
+    (log/debug "IN NEW-PLAYER" name password desc)
     (let [player-data {:name name :password password :desc desc}]
           (if (not (nil? (core/find-player current-player)))
             {:error "You already have an active player!"}
@@ -90,7 +92,7 @@
               {:error "Sorry, a player already exists with that name"}
               (let [new-player (assoc player-data :uuid (uuid))
                     result (core/add-player! new-player)]
-                {:player (json/write-str result) :result result :msg "Congratulations, you exist."}))))))
+                {:player result :result result :msg "Congratulations, you exist."}))))))
 
 ;; fixtures
 (defn lucy []

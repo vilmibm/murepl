@@ -7,19 +7,18 @@
             [murepl.core     :as core]))
 
 (defn build-response [body-map]
+  (let [body-map (if (contains? body-map :player)
+                   (assoc body-map :player (select-keys (:player body-map)
+                                                        [:name :desc :uuid :password]))
+                   body-map)]
     {:status 200
-     :headers {"Content-Type" "application/clojure; charset=utf-8"}
-     :body (pr-str body-map)})
+     :headers {"Content-Type" "application/json; charset=utf-8"}
+     :body (json/encode body-map)}))
 
 (defn get-player-data [request]
   (if-let [raw (get (:headers request) "player")]
-    (json/parse-string raw true)
+    (json/decode raw true)
     nil))
-
-(defn log-command [player expr]
-  (do
-    (log/info (format "USER: %s COMMAND: %s" (:name player) expr))
-    player))
 
 (defroutes api-routes
   (GET "/" [] {:status 301 :headers {"Location" "/index.html"}})
@@ -27,10 +26,9 @@
   (resources "/")
 
   (POST "/eval" [expr :as r]
-        {:status 200
-         :headers {"Content-Type" "application/json; charset=utf-8"}
-         :body (json/encode {:msg "HI" :error "FOO"})}))
-        ;(-> (get-player-data r)
-        ;    (core/log-command expr)
-        ;    (core/eval-command expr)
-        ;    (build-response))))
+        (log/debug "STRING EXPR: " expr)
+        (let [expr (read-string expr)]
+          (-> (get-player-data r)
+              (core/log-command expr)
+              (core/eval-command expr)
+              (build-response)))))

@@ -1,6 +1,7 @@
 (ns murepl.handler
   (:gen-class)
   (:require [clojure.tools.nrepl.server :as nrsrv]
+            [ring.middleware.params     :refer [wrap-params]]
             [ring.adapter.jetty         :refer (run-jetty)]
             [taoensso.timbre            :as log]
             [murepl.core                :as core]
@@ -8,6 +9,8 @@
             [murepl.net.telnet          :as telnet]
             [murepl.net.websocket       :as ws])
   (:import (org.webbitserver WebServers)))
+
+(defn app [] (wrap-params api-routes))
 
 (defn -main [& args]
   (let [args         (apply array-map args)
@@ -31,7 +34,7 @@
     (telnet/start-server telnet-port)
 
     (log/debug "STARTUP: starting jetty on" host "port" port)
-    (run-jetty api-routes {:port port :host host :join? false})
+    (run-jetty (app) {:port port :host host :join? false})
 
     (log/debug "STARTUP: starting webbit on localhost port" ws-port)
     (doto (WebServers/createWebServer ws-port)
