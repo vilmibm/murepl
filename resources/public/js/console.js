@@ -15,9 +15,8 @@
     if (html) {
       $prompt.html(html);
     }
-    else {
-      $prompt.html();
-    }
+
+    return $prompt.html();
   };
 
   function buildMessage (className, msg) {
@@ -99,9 +98,7 @@
       promptHistory: true
     });
 
-    console__ = console_;
-
-    socket.onMessage = handleSocketMessage.bind(null, console_);
+    socket.onmessage = handleSocketMessage.bind(null, console_);
   };
 
   $(_main_);
