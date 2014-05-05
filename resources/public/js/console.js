@@ -41,8 +41,7 @@
       return buildMessage(blankClass, "");
     }
 
-    console.log("Attempting to eval: ", input);
-    // Why not blocking, here?
+    console.log("Attempting to eval:", input);
     $.ajax('/eval', {
       data: {expr: input},
       async: false,
