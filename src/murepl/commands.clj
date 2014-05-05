@@ -79,7 +79,7 @@
       (do
         (println "FOUND PLAYER" player)
         (core/place-player! player (core/find-room-by-name "Lobby"))
-        {:player (json/write-str player) :msg "Welcome back."})
+        {:player player :msg "Welcome back."})
       {:error "Sorry, no such player exists."})))
 
 (defn new-player [name password desc]
