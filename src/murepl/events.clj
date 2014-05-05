@@ -1,12 +1,11 @@
 (ns murepl.events
-  (:require [murepl.common      :refer :all]
-            [murepl.core        :as core]))
+  (:require [murepl.common :refer :all]
+            [murepl.core   :as core]))
 
 (defn send-msg [player msg]
   ;; Invokes player's send-function function.
-  (if-let [send-function (:send-function player)] 
-    (do
-      (send-function msg))))
+  (if-let [send-function (:send-function player)]
+    (send-function msg)))
 
 (defn notify-players [players msg]
   (println "Sending:" msg)
