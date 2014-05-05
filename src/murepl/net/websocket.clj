@@ -12,7 +12,7 @@
   (println "Websocket connected: " con))
 
 (defn close [con]
-  (let [uuid (get clients con)]
+  (let [uuid (get @clients con)]
     (events/disconnect uuid))
   (swap! clients dissoc con)
   (println "Websocket disconnected: " con))

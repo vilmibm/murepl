@@ -23,7 +23,7 @@
 
 (defn disconnect [uuid]
   "Unsubscribe player identified by uuid from the events framework."
-  (let [player (core/find-player-by-uuid uuid)
-        observers (core/others-in-room player (core/lookup-location player))]
+  (let [player    (core/find-player-by-uuid uuid)
+        observers (core/logout-player player)]
     (core/modify-player! (dissoc player :send-function))
     (notify-players observers (format "%s fades slowly away." (:name player)))))
