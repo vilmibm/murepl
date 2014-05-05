@@ -78,8 +78,8 @@
   function handleSocketMessage (console_, data) {
     // Deal with data coming from the websocket. Should be bound with
     // an active console before use as an onMessage handler.
+    var lastPrompt = prompt();
 
-    lastPrompt = prompt();
     console_.msg(buildMessage(successClass, data.data));
     prompt(lastPrompt);
   };
