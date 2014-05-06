@@ -1,9 +1,6 @@
 (ns murepl.net.websocket
-  (:require [murepl.events      :as events])
-  (:import (org.webbitserver WebServer
-                             WebServers
-                             WebSocketHandler)
-           (org.webbitserver.handler StaticFileHandler)))
+  (:require [murepl.events :as events])
+  (:import [org.webbitserver WebSocketHandler]))
 
 (defonce clients (atom {}))
 
@@ -15,14 +12,14 @@
   (println "Websocket connected: " con))
 
 (defn close [con]
-  (let [uuid (get clients con)] 
+  (let [uuid (get @clients con)]
     (events/disconnect uuid))
   (swap! clients dissoc con)
   (println "Websocket disconnected: " con))
 
 (defn register [con uuid]
   (events/connect uuid (partial ws-send con))
-  (swap! clients assoc con uuid) 
+  (swap! clients assoc con uuid)
   (println "Websocket Player Registered: " uuid))
 
 (def ws

@@ -12,4 +12,3 @@ pom.xml.asc
 .lein-plugins
 .lein-repl-history
 .nrepl-port
-resources/public/js
