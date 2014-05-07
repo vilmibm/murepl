@@ -1,4 +1,4 @@
-(defproject murepl "0.2.0-SNAPSHOT"
+(defproject murepl "0.2.1"
   :description "Multi User REPL"
   :url "http://github.com/nathanielksmith/murepl"
   :license {:name "Eclipse Public License"
