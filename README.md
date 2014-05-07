@@ -23,6 +23,9 @@ of MUREPL will run one day.
 
 # changelog
 
+* 0.2.1
+ * Convert frontend to pure JS (no clojurescript)
+ * Fix bugs in event handling framework
 * 0.2.0
  * Refactor events stuff and add basic telnet support (wayner)
 * 0.1.1
