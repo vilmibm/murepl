@@ -1,3 +1,2 @@
-(ns murepl.user)
-
-;; TODO generate keypair
+(ns murepl.user
+  (:require [clojure.jdbc :refer [exec]]))

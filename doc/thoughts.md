@@ -6,38 +6,9 @@ Pronounced _murpull_. Rhymes with _purple_.
 
 ### secure user data
 
-User profiles are kept safe from unauthenticated mutation (though are world
-readable). Distributed client side code creates a keypair and registers the
-public half + a username with a murepl server. Once this is done, communication
-that modifies user state is done using signed JWTs.
-
-This doesn't quite make sense, however. It does not solve the problem of
-authentication; put more simply, it does not account for how passwords will be
-stored.
-
-Given: user knows server's public key
-0) User asks for a token to represent them
-1) Server generates random number (challenge) and encrypts it with user's public key which is on file. stores in DB this generation request.
-2) User decrypts number using their private key and sends it back. challenge response is compared with generation request.
-3) Server generates token and sends it back, encrypted with user's public key
-4) User now signs each request with this token, encrypted with the server's public key
-
-Weak points: Assuming no SSL, session can be hijacked. Assuming users within murepl can access the DB, generation requests can be sniffed and then fulfilled with spoofs.
-
-Alternatively; what if the challenge is static and known by all? 
-
-Question. Can a public key decrypt something a private key encrypts and vice versa? Yes, this is called signing.
-
-0) User signs all requests (using known challenge) with private key
-1) Upon receiving any request, server ensures signature is valid.
-
-Weak points: serer side pgp functions can be redefined to return anything
-desired. Solution: clojail can blacklist the namespace for pgp functions.
-
-This makes sense, but re-using your character from multiple clients becomes
-*really* hard. I discussed this with Terian and in the process realized I could
-just use passwords. The user data will be (unlike the world data) stored in
-postgresql with clojail blocking access to clojure.jdbc.
+Passwords are stored in postgresql and access to clojure.jdbc is blocked via
+clojail. User info, unlike world info, has a source of truth in postgresql (not
+RAM).
 
 ### multiple access modes
 

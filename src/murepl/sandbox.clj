@@ -25,4 +25,3 @@
                 (tst/blanket "clojail")
                 (tst/blanket "clj-pgp")]]
     (clojail/sandbox tester)))
-
