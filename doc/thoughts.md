@@ -34,6 +34,10 @@ Question. Can a public key decrypt something a private key encrypts and vice ver
 Weak points: serer side pgp functions can be redefined to return anything
 desired. Solution: clojail can blacklist the namespace for pgp functions.
 
+This makes sense, but re-using your character from multiple clients becomes
+*really* hard. I discussed this with Terian and in the process realized I could
+just use passwords. The user data will be (unlike the world data) stored in
+postgresql with clojail blocking access to clojure.jdbc.
 
 ### multiple access modes
 
@@ -57,11 +61,6 @@ functions.
 ### multi tenant
 
 Can define multiple gameworlds in a single running JVM.
-
-### as needed encryption
-
-communication can be encrypted on demand. users get a keypair as part of their
-user profile.
 
 ### Per user namespaces
 
