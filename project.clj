@@ -13,4 +13,5 @@
                  [clojail "1.0.6"]
                  [prismatic/schema "0.4.3"]
                  [http-kit "2.1.18"]
+                 [ring "1.4.0-RC1"]
                  [puppetlabs/comidi "0.1.3"]])

@@ -1,6 +1,10 @@
 (ns murepl.server
   (:gen-class)
   (:require [clojure.tools.logging :as log]
+            [ring.middleware.content-type :refer [wrap-content-type]]
+            [ring.middleware.resource :refer [wrap-resource]]
+            [ring.util.response :refer [redirect]]
+            [puppetlabs.comidi :refer [routes GET context routes->handler]]
             [org.httpkit.server :as hk]))
 
 ;; todo
@@ -10,23 +14,26 @@
 ;; authentication.
 
 (def cfg {:port 7999})
-
 (defn ws-handler [channel data]
   (hk/send! channel data))
 
-(defn http-handler [data]
-  {:status 200
-   :headers {"Content-Type" "text/plain"}
-   :body    "SUP"})
-
 ;; TODO telnet handler
 
-(defn handler [ring-request]
-  (hk/with-channel ring-request channel
-    (if (hk/websocket? channel)
-      (hk/on-receive channel (partial ws-handler channel)))
+(defn static-routes []
+  (-> (routes (GET "/" [_] (redirect "/index.html")))
+      routes->handler
+      (wrap-resource "public")
+      wrap-content-type))
 
-    (hk/send! channel (http-handler data))))
+(defn handler [req]
+  (let [http-handler (static-routes)]
+
+    (hk/with-channel req channel
+
+      (if (hk/websocket? channel)
+        (hk/on-receive channel (partial ws-handler channel))
+
+        (hk/send! channel (http-handler req))))))
 
 (defn -main [& args]
   (log/infof "listening for http and websockets on port %s" (:port cfg))
