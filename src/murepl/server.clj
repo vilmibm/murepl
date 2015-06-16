@@ -15,6 +15,7 @@
 
 (def cfg {:port 7999})
 (defn ws-handler [channel data]
+  (println "GOT WS")
   (hk/send! channel data))
 
 ;; TODO telnet handler
@@ -27,11 +28,15 @@
 
 (defn handler [req]
   (let [http-handler (static-routes)]
+    (println "HANDLING")
 
     (hk/with-channel req channel
+      (println "IN CHANNEL")
 
       (if (hk/websocket? channel)
-        (hk/on-receive channel (partial ws-handler channel))
+        (do
+          (println "WS")
+          (hk/on-receive channel (partial ws-handler channel)))
 
         (hk/send! channel (http-handler req))))))
 

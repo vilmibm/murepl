@@ -1,9 +1,9 @@
 (ns murepl.commands
   (:require [murepl.user :as u]))
 
-;; new
-;; login
-;; change-password
+;; new username password
+;; login username password
+;; change-password new-password
 ;; set-info <"key" "val">
 ;; help
 
