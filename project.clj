@@ -3,7 +3,7 @@
   :url "http://github.com/nathanielksmith/murepl"
   :license {:name "GPL v3"
             :url "http://www.gnu.org/licenses/gpl.txt"}
-  :main murepl.server
+  :main murepl.main
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.nrepl "0.2.10"]
@@ -12,6 +12,7 @@
                  [cheshire "5.5.0"]
                  [clojail "1.0.6"]
                  [prismatic/schema "0.4.3"]
+                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [http-kit "2.1.18"]
                  [ring "1.4.0-RC1"]
                  [puppetlabs/comidi "0.1.3"]])

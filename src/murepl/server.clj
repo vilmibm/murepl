@@ -1,6 +1,6 @@
 (ns murepl.server
-  (:gen-class)
   (:require [clojure.tools.logging :as log]
+            [murepl.async :as a]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.util.response :refer [redirect]]
@@ -13,9 +13,9 @@
 ;; the \ commands, do that. otherwise, run eval with appropriate user
 ;; authentication.
 
-(def cfg {:port 7999})
 (defn ws-handler [channel data]
-  (println "GOT WS")
+  (println channel)
+  (println "GOT WS" data)
   (hk/send! channel data))
 
 ;; TODO telnet handler
@@ -36,11 +36,10 @@
       (if (hk/websocket? channel)
         (do
           (println "WS")
+          (a/user-join! "woo")
           (hk/on-receive channel (partial ws-handler channel)))
 
         (hk/send! channel (http-handler req))))))
 
-(defn -main [& args]
-  (log/infof "listening for http and websockets on port %s" (:port cfg))
+(defn run! [cfg]
   (hk/run-server handler (select-keys cfg [:port])))
-
