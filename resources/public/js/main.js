@@ -7,8 +7,8 @@ var murepl = {};
         var socket;
 
         socket = new WebSocket("ws://" + hostname + ":" + PORT);
-        socket.onmessage = function () {
-            console.log(arguments);
+        socket.onmessage = function (msg) {
+            console.log(msg);
         };
 
         window.beforeunload = function() {

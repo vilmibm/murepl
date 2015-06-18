@@ -1,11 +1,12 @@
 (ns murepl.server
   (:require [clojure.tools.logging :as log]
-            [murepl.async :as a]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.util.response :refer [redirect]]
+            [puppetlabs.trapperkeeper.services :refer [defservice get-service service-context]]
             [puppetlabs.comidi :refer [routes GET context routes->handler]]
-            [org.httpkit.server :as hk]))
+            [org.httpkit.server :as hk]
+            [murepl.async-service :as mas]))
 
 ;; todo
 ;; figure out how to handle special, non-eval commands like \help \new in a way that is consistent.
@@ -13,9 +14,9 @@
 ;; the \ commands, do that. otherwise, run eval with appropriate user
 ;; authentication.
 
+(def cfg {:port 7999})
+
 (defn ws-handler [channel data]
-  (println channel)
-  (println "GOT WS" data)
   (hk/send! channel data))
 
 ;; TODO telnet handler
@@ -26,20 +27,34 @@
       (wrap-resource "public")
       wrap-content-type))
 
-(defn handler [req]
-  (let [http-handler (static-routes)]
-    (println "HANDLING")
+(defn handler [async-svc]
+  (fn [req]
+    (let [http-handler (static-routes)]
+      (println "HANDLING")
 
-    (hk/with-channel req channel
-      (println "IN CHANNEL")
+      (hk/with-channel req channel
+        (println "IN CHANNEL")
 
-      (if (hk/websocket? channel)
-        (do
-          (println "WS")
-          (a/user-join! "woo")
-          (hk/on-receive channel (partial ws-handler channel)))
+        (if (hk/websocket? channel)
+          (do
+            (println "WS")
+            (mas/user-join! async-svc "woo")
+            (hk/on-receive channel (partial ws-handler channel))
+            (hk/on-close channel (fn [_] (mas/user-part! async-svc "oow"))))
 
-        (hk/send! channel (http-handler req))))))
+          (hk/send! channel (http-handler req)))))))
 
-(defn run! [cfg]
-  (hk/run-server handler (select-keys cfg [:port])))
+(defservice web-service
+  [AsyncService]
+  (init [this ctx]
+        (let [async-svc (get-service this :AsyncService)]
+          (merge ctx {:handler (handler async-svc)})))
+
+  (start [this ctx]
+         (log/infof "listening for http and websockets on port %s" (:port cfg))
+         (let [server (hk/run-server (:handler (service-context this)) (select-keys cfg [:port]))]
+           (assoc ctx :web-server server)))
+
+  (stop [this ctx]
+        ((:web-server ctx))
+        ctx))

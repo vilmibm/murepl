@@ -1,27 +1,34 @@
 (ns murepl.async
-  (:require [clojure.core.async :refer [>! <! close! go chan]]))
-
-;; i want a thing that prints when a user joins and when a user leaves.
-
-(defonce !state (atom nil))
-
-;; TODO rename user-events to be joining specific
-;; TODO add notifications bus
-(defn user-join! [user]
-  (go (>! (:user-events @!state) user)))
+  (:require [clojure.tools.logging :as log]
+            [clojure.core.async :refer [>! <! close! go chan alts!]]))
 
 (defn init! []
-  (println "INITTING")
-  (reset! !state {:user-events (chan)})
-  ;; listen for users
+  {:joins (chan)
+   :parts (chan)
+   :notifications (chan)})
+
+(defn go! [channels]
   (go
-    (println "LISTENING")
     (while true
-      (println "BLOCKING")
-      (let [user (<! (:user-events @!state))]
-        (println "USER JOINED " user)))))
+      (println (<! (:notifications channels)))))
 
-(defn destroy! []
-  (close! (:user-events @!state))
-  (reset! !state nil))
+    (go
+      (println "LISTENING")
+      (while true
+        (println "BLOCKING")
+        (let [{:keys [joins parts notifications]} channels
+              [v ch] (alts! [joins parts])]
+          (condp = ch
+            joins (>! notifications "user joined")
+            parts (>! notifications "user parted"))))))
 
+(defn destroy! [channels]
+  ;; TODO figure out how to stop those go blocks?
+  (doseq [chan (vals channels)]
+    (close! chan)))
+
+(defn user-join! [channels user]
+  (go (>! (:joins channels) user)))
+
+(defn user-part! [channels user]
+  (go (>! (:parts channels) user)))
