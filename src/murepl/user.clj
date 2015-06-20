@@ -5,10 +5,10 @@
 
 (def User
   {:name s/Str
-   :password s/Str
+   (s/optional-key  :password) s/Str
    ;; TODO figure out actual date/time type
    (s/optional-key :lastseen) (s/maybe s/Str)
-   :data (type {})})
+   (s/optional-key :data) (type {})})
 
 (s/defn lookup [user :- User, db :- Dbs] :- User
   (first (jdbc/query db ["SELECT * FROM users WHERE name = ?" (:name user)])))

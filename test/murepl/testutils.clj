@@ -12,7 +12,7 @@
   "CREATE TABLE users (name text primary key,
                        password text not null,
                        lastseen timestamp,
-                       data json)")
+                       data json default '\"{}\"')")
 
 (def create-meta-table-sql
   "CREATE TABLE meta (help text)")
