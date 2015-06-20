@@ -1,8 +1,19 @@
 (ns murepl.storage
   "http://hiim.tv/clojure/2014/05/15/clojure-postgres-json/"
-  (:require [clojure.java.jdbc :as jdbc]
+  (:require [schema.core :as s]
+            [clojure.java.jdbc :as jdbc]
             [cheshire.core :as json])
   (:import org.postgresql.util.PGobject))
+
+(def Dbs {:subprotocol (s/eq "postgresql")
+          :subname s/Str
+          :user s/Str
+          :password s/Str})
+
+(def db {:subprotocol "postgresql"
+         :subname "//localhost:5432/murepl"
+         :user "murepl"
+         :password "murepl"})
 
 (defn value-to-json-pgobject [value]
   (doto (PGobject.)

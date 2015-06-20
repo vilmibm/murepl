@@ -6,6 +6,7 @@
             [puppetlabs.trapperkeeper.services :refer [defservice get-service service-context]]
             [puppetlabs.comidi :refer [routes GET context routes->handler]]
             [org.httpkit.server :as hk]
+            [murepl.commands :as cmd]
             [murepl.async-service :as mas]))
 
 ;; todo
@@ -17,6 +18,9 @@
 (def cfg {:port 7999})
 
 (defn ws-handler [channel data]
+  (log/infof "websocket message received: %s" data)
+  ;; TODO determine user context before calling dispatch
+  (cmd/dispatch nil data)
   (hk/send! channel data))
 
 ;; TODO telnet handler
@@ -30,17 +34,15 @@
 (defn handler [async-svc]
   (fn [req]
     (let [http-handler (static-routes)]
-      (println "HANDLING")
 
       (hk/with-channel req channel
         (println "IN CHANNEL")
 
         (if (hk/websocket? channel)
           (do
-            (println "WS")
-            (mas/user-join! async-svc "woo")
+            (log/info "websocket connected")
             (hk/on-receive channel (partial ws-handler channel))
-            (hk/on-close channel (fn [_] (mas/user-part! async-svc "oow"))))
+            (hk/on-close channel (fn [_] (log/info "websocket closed"))))
 
           (hk/send! channel (http-handler req)))))))
 

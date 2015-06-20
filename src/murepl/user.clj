@@ -1,28 +1,25 @@
 (ns murepl.user
   (:require [schema.core :as s]
-            [murepl.storage] ;; included for side effects, i'm sorry.
+            [murepl.storage :refer [db Dbs]]
             [clojure.java.jdbc :as jdbc]))
-
-(def db {:subprotocol "postgresql"
-         :subname "//localhost:5432/murepl"
-         :user "murepl"
-         :password "murepl"})
 
 (def User
   {:name s/Str
    :password s/Str
+   ;; TODO figure out actual date/time type
+   (s/optional-key :lastseen) (s/maybe s/Str)
    :data (type {})})
 
-(s/defn lookup [user :- User db]
+(s/defn lookup [user :- User, db :- Dbs] :- User
   (first (jdbc/query db ["SELECT * FROM users WHERE name = ?" (:name user)])))
 
-(s/defn new! [user :- User db] :- User
+(s/defn new! [user :- User db :- Dbs] :- User
   "Given a user map, insert into db as a new user"
-  (let [sql "INSERT INTO users VALUES (?, ?, ?)"]
+  (let [sql "INSERT INTO users VALUES (?, ?, DEFAULT, ?)"]
     (jdbc/execute! db [sql (:name user) (:password user) (:data user)])
     user))
 
-(s/defn update! [user :- User db] :- User
+(s/defn update! [user :- User db :- Dbs] :- User
   "Given a user map, update it in the db"
   (let [sql "UPDATE users SET password=?, data=? WHERE name=?"]
     (jdbc/execute! db [sql (:password user) (:data user) (:name user)]))
