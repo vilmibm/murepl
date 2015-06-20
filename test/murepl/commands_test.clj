@@ -66,10 +66,26 @@
               result (dispatch test-db nil command-str)]
           (is (re-find #"try again" result)))))))
 
+(deftest change-password-test
+  (testing "when changing a user's password"
+    (testing "and command is not malformed"
+      (let [borges {:name "borges"
+                    :password "labyrinth"}
+            _ (u/new! borges test-db)
+            command-str "/change-password \"aleph\""
+            result (dispatch test-db borges command-str)
+            db-result (u/lookup borges test-db)]
+        (testing "it is updated"
+          (= "aleph" (:password db-result)))
+        (testing "appropriate message returned"
+          (is (re-find #"updated" result)))))
+    (testing "but the command is malformed"
+      ;; TODO
+      (testing "an appropriate message is returned"))))
+
 (deftest login-test)
 (deftest set-info-test)
 (deftest logout-test)
-(deftest change-password-test)
 (deftest set-info-test)
 (deftest help-test)
 

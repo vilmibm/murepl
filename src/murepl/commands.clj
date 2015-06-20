@@ -43,8 +43,14 @@
   nil)
 
 (s/defn change-password!
-  [db :- Dbs user :- User new-password :- s/Str] :- s/Str
-  nil)
+  [db :- Dbs user :- User command-str :- s/Str] :- s/Str
+  (let [[_ pw] (re-matches #"^\/change-password \"([^\"]+?)\"" command-str)]
+    (if (some? pw)
+      (do  (-> user
+               (assoc :password pw)
+               (u/update! db))
+           "password successfully updated. there is no need to log back in, but use it next time.")
+      "try again with something like /change-password \"my password in double quotes\"")))
 
 (s/defn help [db :- Dbs]
   nil)
