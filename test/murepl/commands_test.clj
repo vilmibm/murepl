@@ -38,7 +38,8 @@
           (with-swap called murepl.commands/help
             (dispatch test-db nil "/help")
             (is @called)))))
-    (testing "and the command is not found")))
+    (testing "and the command is not found"
+      (is (re-find #"oops.*/help" (dispatch test-db nil "/oh my"))))))
 
 (deftest new-user-test
   (testing "when creating a new user"
@@ -125,4 +126,3 @@
 (deftest login-test)
 (deftest logout-test)
 (deftest help-test)
-

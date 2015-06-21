@@ -81,4 +81,5 @@
     #"^\/h" (help db)
     #"^\/new" (new-user! db command-str)
     #"^\/change-password" (change-password! db user command-str)
-    #"^\/set" (set-info! db user command-str)))
+    #"^\/set" (set-info! db user command-str)
+    "oops, i didn't understand you. type /help for assistance."))
