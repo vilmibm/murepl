@@ -33,5 +33,5 @@
     (let [type  (.getType pgobj)
           value (.getValue pgobj)]
       (case type
-        "json" (json/parse-string value true)
+        "json" (json/parse-string value)
         :else value))))

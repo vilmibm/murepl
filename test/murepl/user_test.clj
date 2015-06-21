@@ -10,15 +10,15 @@
 
 (deftest user-crud
   (testing "when creating a user"
-    (let [user {:name "hi" :password "yeah" :lastseen nil :data {:augen "blau"}}
+    (let [user {:name "hi" :password "yeah" :lastseen nil :data {"augen" "blau"}}
           result (u/new! user test-db)]
       (testing "user is returned"
         (is (= user result)))
       (testing "user is created in db"
         (is (= user (u/lookup user test-db))))))
   (testing "when updating a user"
-    (let [user {:name "there" :password "yeah" :lastseen nil :data {:color "purple"}}
-          updated-user (assoc user :data {:color "black"})
+    (let [user {:name "there" :password "yeah" :lastseen nil :data {"color" "purple"}}
+          updated-user (assoc user :data {"color" "black"})
           _ (u/new! user test-db)
           result (u/update! updated-user test-db)]
       (testing "user is returned"

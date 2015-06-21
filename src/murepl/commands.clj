@@ -11,8 +11,7 @@
 ;; set-info <"key" "val">
 ;; help
 
-;; TODO needs access to user stuff, presence atom
-;; TODO schemafy
+;; TODO allow liberal whitespace in command strings
 
 (defn evaluate [code] nil)
 
@@ -40,7 +39,28 @@
 
 (s/defn set-info!
   [db :- Dbs user :- User command-str :- s/Str] :- s/Str
-  nil)
+  (let [[_ k v] (re-matches #"^\/set-info\s+\"([^\"]+?)\"\s+\"([^\"]*?)\"" command-str)]
+    (cond
+
+      ;; Remove a key
+      (and (some? k) (empty? v))
+      (do
+        (-> user
+            (assoc :data (dissoc (:data user) k))
+            (u/update! db))
+        (format "removed %s" k))
+
+      ;; Add or change a key
+      (and (some? k) (some? v))
+      (do
+        (-> user
+            (assoc-in [:data k] v)
+            (u/update! db))
+        (format  "updated! %s set to %s" k v))
+
+      ;; Malformed
+      :else
+      "try again with something like /set-info \"favorite color\" \"yellow\"")))
 
 (s/defn change-password!
   [db :- Dbs user :- User command-str :- s/Str] :- s/Str
@@ -61,4 +81,4 @@
     #"^\/h" (help db)
     #"^\/new" (new-user! db command-str)
     #"^\/change-password" (change-password! db user command-str)
-    #"^\/set" (set-info! db command-str)))
+    #"^\/set" (set-info! db user command-str)))

@@ -8,9 +8,16 @@
    (s/optional-key  :password) s/Str
    ;; TODO figure out actual date/time type
    (s/optional-key :lastseen) (s/maybe s/Str)
+   :data (type {})})
+
+(def SearchUser
+  {:name s/Str
+   (s/optional-key  :password) s/Str
+   ;; TODO figure out actual date/time type
+   (s/optional-key :lastseen) (s/maybe s/Str)
    (s/optional-key :data) (type {})})
 
-(s/defn lookup [user :- User, db :- Dbs] :- User
+(s/defn lookup [user :- SearchUser, db :- Dbs] :- User
   (first (jdbc/query db ["SELECT * FROM users WHERE name = ?" (:name user)])))
 
 (s/defn new! [user :- User db :- Dbs] :- User
