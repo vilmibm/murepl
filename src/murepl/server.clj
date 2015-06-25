@@ -1,5 +1,6 @@
 (ns murepl.server
   (:require [clojure.tools.logging :as log]
+            [cheshire.core :as json]
             [ring.middleware.content-type :refer [wrap-content-type]]
             [ring.middleware.resource :refer [wrap-resource]]
             [ring.util.response :refer [redirect]]
@@ -7,21 +8,18 @@
             [puppetlabs.comidi :refer [routes GET context routes->handler]]
             [org.httpkit.server :as hk]
             [murepl.commands :as cmd]
+            [murepl.comms :as comm]
+            [murepl.storage :as st]
             [murepl.async-service :as mas]))
-
-;; todo
-;; figure out how to handle special, non-eval commands like \help \new in a way that is consistent.
-;; for each mode (http, telnet, ws), going to get a string. if it matches one of
-;; the \ commands, do that. otherwise, run eval with appropriate user
-;; authentication.
 
 (def cfg {:port 7999})
 
-(defn ws-handler [channel data]
+;; TODO extract this to be non websocket specific; test it.
+(defn ws-handler [db channel cmd-svc data]
   (log/infof "websocket message received: %s" data)
-  ;; TODO determine user context before calling dispatch
-  (cmd/dispatch nil data)
-  (hk/send! channel data))
+
+  (let [result (cmd/dispatch cmd-svc db channel data)]
+    (hk/send! channel result)))
 
 ;; TODO telnet handler
 
@@ -31,7 +29,7 @@
       (wrap-resource "public")
       wrap-content-type))
 
-(defn handler [async-svc]
+(defn handler [db async-svc cmd-svc comm-svc]
   (fn [req]
     (let [http-handler (static-routes)]
 
@@ -41,16 +39,18 @@
         (if (hk/websocket? channel)
           (do
             (log/info "websocket connected")
-            (hk/on-receive channel (partial ws-handler channel))
+            (hk/on-receive channel (partial ws-handler db channel cmd-svc))
             (hk/on-close channel (fn [_] (log/info "websocket closed"))))
 
           (hk/send! channel (http-handler req)))))))
 
 (defservice web-service
-  [AsyncService]
+  [AsyncService CommService CommandService]
   (init [this ctx]
-        (let [async-svc (get-service this :AsyncService)]
-          (merge ctx {:handler (handler async-svc)})))
+        (let [async-svc (get-service this :AsyncService)
+              cmd-svc (get-service this :CommandService)
+              comm-svc (get-service this :CommService)]
+          (merge ctx {:handler (handler st/db async-svc cmd-svc comm-svc)})))
 
   (start [this ctx]
          (log/infof "listening for http and websockets on port %s" (:port cfg))

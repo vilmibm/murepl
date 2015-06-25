@@ -21,32 +21,33 @@
       (testing "and the command is"
         (testing "new it is called"
           (with-swap called murepl.commands/new-user!
-            (dispatch test-db nil "/new pukey puke")
+            (dispatch* nil test-db nil nil "/new pukey puke")
             (is @called)))
         (testing "login it is called"
-          ;; TODO
-          )
+          (with-swap called murepl.commands/login!
+            (dispatch* nil test-db nil nil "/login puker puke")
+            (is @called)))
         (testing "change-password it is called"
           (with-swap called murepl.commands/change-password!
-            (dispatch test-db borges "/change-password foobarbaz")
+            (dispatch* nil test-db borges nil "/change-password foobarbaz")
             (is @called)))
         (testing "set-info it is called"
           (with-swap called murepl.commands/set-info!
-            (dispatch test-db borges "/set foobar baz")
+            (dispatch* nil test-db borges nil "/set foobar baz")
             (is @called)))
         (testing "help it is called"
           (with-swap called murepl.commands/help
-            (dispatch test-db nil "/help")
+            (dispatch* nil test-db nil nil "/help")
             (is @called)))))
     (testing "and the command is not found"
-      (is (re-find #"oops.*/help" (dispatch test-db nil "/oh my"))))))
+      (is (re-find #"oops.*/help" (dispatch* nil test-db nil nil "/oh my"))))))
 
 (deftest new-user-test
   (testing "when creating a new user"
 
     (testing "and the user doesn't exist"
       (let [command-str "/new \"borges\" \"labyrinth\""
-            result (dispatch test-db nil command-str)
+            result (dispatch* nil test-db nil nil command-str)
             db-result (u/lookup borges test-db)]
         (testing "get back message"
           (is (re-find #"created" result)))
@@ -57,13 +58,13 @@
     (testing "but username already exists"
       (testing "an appropriate message is returned"
         (let [command-str "/new \"borges\" \"labyrinth\""
-              result (dispatch test-db nil command-str)]
+              result (dispatch* nil test-db nil nil command-str)]
           (is (re-find #"already exists" result)))))
 
     (testing "but the command is malformed"
       (testing "an appropriate message is returned"
         (let [command-str "/new borges labyrinth"
-              result (dispatch test-db nil command-str)]
+              result (dispatch* nil test-db nil nil command-str)]
           (is (re-find #"try again.*new" result)))))))
 
 (deftest change-password-test
@@ -72,7 +73,7 @@
 
     (testing "and command is not malformed"
       (let [command-str "/change-password \"aleph\""
-            result (dispatch test-db borges command-str)
+            result (dispatch* nil test-db borges nil command-str)
             db-result (u/lookup borges test-db)]
         (testing "it is updated"
           (= "aleph" (:password db-result)))
@@ -81,7 +82,7 @@
 
     (testing "but the command is malformed"
       (let [command-str "/change-password foobarbaz"
-            result (dispatch test-db borges command-str)]
+            result (dispatch* nil test-db borges nil command-str)]
         (testing "an appropriate message is returned"
           (is (re-find #"try again.*change-password" result)))))))
 
@@ -92,7 +93,7 @@
     (testing "and the command is not malformed"
       (testing "and stuff is added"
         (let [command-str "/set-info \"favorite color\" \"yellow\""
-              result (dispatch test-db borges command-str)
+              result (dispatch* nil test-db borges nil command-str)
               db-result (u/lookup borges test-db)]
           (testing "the user's info is updated"
             (is (= "yellow" (get-in db-result [:data "favorite color"]))))
@@ -101,7 +102,7 @@
 
       (testing "and existing stuff is changed"
         (let [command-str "/set-info \"favorite color\" \"red\""
-              result (dispatch test-db borges command-str)
+              result (dispatch* nil test-db borges nil command-str)
               db-result (u/lookup borges test-db)]
           (testing "the user's info is updated"
             (is (= "red" (get-in db-result [:data "favorite color"]))))
@@ -110,7 +111,7 @@
 
       (testing "and stuff is removed"
         (let [command-str "/set-info \"favorite color\" \"\""
-              result (dispatch test-db borges command-str)
+              result (dispatch* nil test-db borges nil command-str)
               db-result (u/lookup borges test-db)]
           (testing "the user's info is updated"
             (is (nil? (get-in db-result [:data "favorite color"]))))
@@ -119,10 +120,20 @@
 
     (testing "and the command is malformed"
       (let [command-str "/set-info foo bar"
-            result (dispatch test-db borges command-str)]
+            result (dispatch* nil test-db borges nil command-str)]
         (testing "an appropriate message is returned"
           (is (re-find #"try again.*set-info" result)))))))
 
-(deftest login-test)
+(deftest login-test
+  (testing "when logging in"
+    (testing "and the command is not malformed"
+      (testing "but the un/pw is incorrect"
+        (testing "and approprirate message is returned"))
+      (testing "and the user exists"
+        (testing "channel is associated with user")
+        (testing "appropriate message is returned")))
+    (testing "and the command is malformed"
+      (testing "an appropriate message is returned"))))
+
 (deftest logout-test)
 (deftest help-test)

@@ -2,7 +2,9 @@
   "This namespace is for the handling of / commands. It is transport
   independent. It returns string messages that can be sent to a user."
   (:require [schema.core :as s]
+            [puppetlabs.trapperkeeper.services :refer [defservice get-service]]
             [murepl.storage :refer [Dbs]]
+            [murepl.comms :as comm]
             [murepl.user :refer [User] :as u]))
 
 ;; new username password
@@ -13,13 +15,27 @@
 
 ;; TODO allow liberal whitespace in command strings
 
-(defn evaluate [code] nil)
+(defn evaluate [db user code] nil)
 
-(s/defn login [db :- Dbs
-               presence
-               user :- User
-               password :- s/Str] :- s/Str
-  nil)
+(s/defn login!
+  [comm-svc :- s/Any ;; TODO
+   db :- Dbs
+   channel :- s/Any ;; TODO
+   command-str] :- s/Str
+   (let [[_ un pw] (re-matches #"\/login \"([^\"]+?)\" \"([^\"]+?)\"" command-str)]
+     (cond
+
+       (or (nil? un) (nil? pw))
+       "try again with something like /login \"my rad username in double quotes\" \"my password in double quotes\""
+
+       (nil? (u/lookup {:name un} db))
+       "no such user found :( check your username and/or password."
+
+       :else
+       (do
+         (comm/register! comm-svc (u/lookup {:name un} db) channel)
+         ;; TODO async to alert world to login
+         (format "you are logged in as %s" un)))))
 
 (defn logout [presence user] nil)
 
@@ -75,11 +91,28 @@
 (s/defn help [db :- Dbs]
   nil)
 
-(s/defn ^:always-validate dispatch
-  [db :- Dbs user :- (s/maybe User) command-str :- s/Str] :- s/Str
+(s/defn ^:always-validate dispatch*
+  [comm-svc ;; TODO
+   db :- Dbs
+   user :- (s/maybe User)
+   channel ;; TODO
+   command-str :- s/Str] :- s/Str
   (condp re-find command-str
     #"^\/h" (help db)
     #"^\/new" (new-user! db command-str)
     #"^\/change-password" (change-password! db user command-str)
+    #"^\/login" (login! db channel command-str)
     #"^\/set" (set-info! db user command-str)
     "oops, i didn't understand you. type /help for assistance."))
+
+(defprotocol CommandService
+  (dispatch [this db channel command-str]))
+
+(defservice command-service
+  CommandService
+  [CommService]
+  (init [this ctx] ctx)
+  (dispatch [this db channel command-str]
+            (let [comm-svc (get-service this :CommService)
+                  user (comm/channel->user comm-svc channel)]
+              (dispatch* comm-svc db user channel command-str))))
