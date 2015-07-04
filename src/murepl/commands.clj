@@ -31,6 +31,9 @@
        (nil? (u/lookup {:name un} db))
        "no such user found :( check your username and/or password."
 
+       (not= pw (:password (u/lookup {:name un} db)))
+       "wrong password."
+
        :else
        (do
          (comm/register! comm-svc (u/lookup {:name un} db) channel)
@@ -101,7 +104,7 @@
     #"^\/h" (help db)
     #"^\/new" (new-user! db command-str)
     #"^\/change-password" (change-password! db user command-str)
-    #"^\/login" (login! db channel command-str)
+    #"^\/login" (login! comm-svc db channel command-str)
     #"^\/set" (set-info! db user command-str)
     "oops, i didn't understand you. type /help for assistance."))
 

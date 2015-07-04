@@ -28,7 +28,7 @@
 
   (register! [this user channel]
              (let [{:keys [users->channels]} (service-context this)]
-               (if (contains? users->channels (:name user))
+               (if (contains? @users->channels (:name user))
                  (unregister! this user)
                  (dosync
                   (alter users->channels assoc (:name user) channel)))))
@@ -41,7 +41,7 @@
   (channel->user [this channel]
                  (let [{:keys [users->channels]} (service-context this)
                        if= (fn [x] (fn [[k v]] (if (= v x) k)))]
-                   (if-let [username (some (if= channel) users->channels)]
+                   (if-let [username (some (if= channel) @users->channels)]
                      (u/lookup {:name username} st/db))))
 
   (send-msg! [this user] nil))
