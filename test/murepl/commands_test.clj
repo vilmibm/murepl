@@ -1,5 +1,6 @@
 (ns murepl.commands-test
   (:require [murepl.commands :refer :all]
+            [murepl.comms :as comm]
             [murepl.testutils :refer [test-db reset-db!]]
             [murepl.user :as u]
             [schema.test :refer [validate-schemas]]
@@ -126,14 +127,37 @@
 
 (deftest login-test
   (testing "when logging in"
+    (u/new! borges test-db)
+
     (testing "and the command is not malformed"
-      (testing "but the un/pw is incorrect"
-        (testing "and approprirate message is returned"))
+      (testing "but the username is incorrect"
+        (let [command-str "/login \"bzorges\" \"labyrinth\""
+              result (dispatch* nil test-db borges nil command-str)]
+          (testing "an approprirate message is returned"
+            (is (re-find #"no such user" result)))))
+
+      (testing "but the password is incorrect"
+        (let [command-str "/login \"borges\" \"labyzrinth\""
+              result (dispatch* nil test-db borges nil command-str)]
+          (testing "an approprirate message is returned"
+            (is (re-find #"wrong password" result)))))
+
       (testing "and the user exists"
-        (testing "channel is associated with user")
-        (testing "appropriate message is returned")))
+        (let [register-args (atom nil)]
+          (with-redefs [comm/register! (fn [_ u c] (reset! register-args {:user u :chan c}))]
+            (let [command-str "/login \"borges\" \"labyrinth\""
+                  result (dispatch* nil test-db borges "fake channel" command-str)]
+              (testing "register! is called appropriately"
+                (is (= borges (dissoc (:user @register-args) :lastseen)))
+                (is (= "fake channel" (:chan @register-args))))
+              (testing "appropriate message is returned"
+                (is (re-find #"you are logged in.*borges" result))))))))
+
     (testing "and the command is malformed"
-      (testing "an appropriate message is returned"))))
+      (let [command-str "/login borges labyritncn"
+            result (dispatch* nil test-db borges nil command-str)]
+        (testing "an appropriate message is returned"
+          (is (re-find #"try again with something" result)))))))
 
 (deftest logout-test)
 (deftest help-test)

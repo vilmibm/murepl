@@ -14,7 +14,6 @@
 
 (def cfg {:port 7999})
 
-;; TODO extract this to be non websocket specific; test it.
 (defn ws-handler [db channel cmd-svc data]
   (log/infof "websocket message received: %s" data)
 
@@ -40,6 +39,7 @@
           (do
             (log/info "websocket connected")
             (hk/on-receive channel (partial ws-handler db channel cmd-svc))
+            ;; TODO deregister the channel
             (hk/on-close channel (fn [_] (log/info "websocket closed"))))
 
           (hk/send! channel (http-handler req)))))))
