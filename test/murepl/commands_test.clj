@@ -159,5 +159,13 @@
         (testing "an appropriate message is returned"
           (is (re-find #"try again with something" result)))))))
 
-(deftest logout-test)
+(deftest logout-test
+  (testing "when logging out"
+    (testing "and the command is malformed"
+      (testing "an appropriate message is returned"))
+    (testing "and the command is well formed"
+      (testing "but there is no user registered to the channel")
+      (testing "and there is a user registered to the channel"
+        (testing "the user is unregistered")))))
+
 (deftest help-test)
