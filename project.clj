@@ -5,6 +5,8 @@
             :url "http://www.gnu.org/licenses/gpl.txt"}
   :main puppetlabs.trapperkeeper.main
   :min-lein-version "2.0.0"
+  :repl-options {:init-ns user}
+  :profiles {:dev {:source-paths ["dev"]}}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojure/tools.nrepl "0.2.10"]
                  [org.clojure/java.jdbc "0.3.7"]
