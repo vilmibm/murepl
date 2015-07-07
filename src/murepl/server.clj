@@ -14,11 +14,16 @@
 
 (def cfg {:port 7999})
 
-(defn ws-handler [db channel cmd-svc data]
+(defn ws-receive [db channel cmd-svc data]
   (log/infof "websocket message received: %s" data)
 
   (let [result (cmd/dispatch cmd-svc db channel data)]
     (hk/send! channel result)))
+
+(defn ws-close [channel comm-svc _]
+  (let [user (comm/channel->user comm-svc channel)]
+    (log/infof "websocket closed, unregistering %s" (:name user))
+    (comm/unregister! comm-svc user)))
 
 ;; TODO telnet handler
 
@@ -33,14 +38,11 @@
     (let [http-handler (static-routes)]
 
       (hk/with-channel req channel
-        (println "IN CHANNEL")
-
         (if (hk/websocket? channel)
           (do
             (log/info "websocket connected")
-            (hk/on-receive channel (partial ws-handler db channel cmd-svc))
-            ;; TODO deregister the channel
-            (hk/on-close channel (fn [_] (log/info "websocket closed"))))
+            (hk/on-receive channel (partial ws-receive db channel cmd-svc))
+            (hk/on-close channel (partial ws-close channel comm-svc)))
 
           (hk/send! channel (http-handler req)))))))
 
