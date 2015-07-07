@@ -1,5 +1,6 @@
 (ns murepl.comms
-  (:require [puppetlabs.trapperkeeper.services :refer [defservice service-context]]
+  (:require [clojure.tools.logging :as log]
+            [puppetlabs.trapperkeeper.services :refer [defservice service-context]]
             [murepl.user :as u]
             [murepl.storage :as st]))
 
@@ -31,12 +32,14 @@
                (if (contains? @users->channels (:name user))
                  (unregister! this user)
                  (dosync
-                  (alter users->channels assoc (:name user) channel)))))
+                  (alter users->channels assoc (:name user) channel)
+                  (log/infof "registered channel for %s" (:name user))))))
 
   (unregister! [this user]
                (let [{:keys [users->channels]} (service-context this)]
                  (dosync
-                  (alter users->channels dissoc (:name user)))))
+                  (alter users->channels dissoc (:name user))
+                  (log/infof "unregistered channel for %s" (:name user)))))
 
   (channel->user [this channel]
                  (let [{:keys [users->channels]} (service-context this)

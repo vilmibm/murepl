@@ -1,5 +1,6 @@
 (ns murepl.async-service
-  (:require [puppetlabs.trapperkeeper.services :refer [defservice service-context]]
+  (:require [clojure.tools.logging :as log]
+            [puppetlabs.trapperkeeper.services :refer [defservice service-context]]
             [murepl.async :as ma]))
 
 (defprotocol AsyncService
@@ -18,10 +19,12 @@
 
   (start [this ctx]
          (ma/go! (:channels ctx))
+         (log/info "async engine started")
          ctx)
 
   (stop [this ctx]
         (ma/destroy! (:channels ctx))
+        (log/info "async engine shutting down")
         ctx)
 
   (user-join! [this user]

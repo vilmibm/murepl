@@ -13,9 +13,7 @@
       (println (<! (:notifications channels)))))
 
     (go
-      (println "LISTENING")
       (while true
-        (println "BLOCKING")
         (let [{:keys [joins parts notifications]} channels
               [v ch] (alts! [joins parts])]
           (condp = ch
