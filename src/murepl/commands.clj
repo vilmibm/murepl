@@ -23,7 +23,7 @@
    channel :- s/Any ;; TODO
    command-str]
    (let [[_ un pw] (re-matches #"\/login \"([^\"]+?)\" \"([^\"]+?)\"" command-str)
-         db-user (u/lookup {:name un} db)]
+         db-user (if (nil? un) nil (u/lookup {:name un} db))]
      (cond
 
        ;; TODO user already logged in, reject
@@ -68,7 +68,7 @@
 
 (s/defn set-info! :- s/Str
   [db :- Dbs user :- User command-str :- s/Str]
-  (let [[_ k v] (re-matches #"^\/set-info\s+\"([^\"]+?)\"\s+\"([^\"]*?)\"" command-str)]
+  (let [[_ k v] (re-matches #"^\/set\s+\"([^\"]+?)\"\s+\"([^\"]*?)\"" command-str)]
     (cond
 
       ;; Remove a key
@@ -89,7 +89,7 @@
 
       ;; Malformed
       :else
-      "try again with something like /set-info \"favorite color\" \"yellow\"")))
+      "try again with something like /set \"favorite color\" \"yellow\"")))
 
 (s/defn change-password! :- s/Str
   [db :- Dbs user :- User command-str :- s/Str]
@@ -111,12 +111,12 @@
    channel ;; TODO
    command-str :- s/Str]
   (condp re-find command-str
-    #"^\/h(elp)? " (help db)
+    #"^\/help" (help db)
     #"^\/new " (new-user! db command-str)
     #"^\/change-password " (change-password! db user command-str)
     #"^\/(exit|logout|quit)" (logout! comm-svc db user)
     #"^\/login " (login! comm-svc db channel command-str)
-    #"^\/set(-info)?  " (set-info! db user command-str)
+    #"^\/set " (set-info! db user command-str)
     "oops, i didn't understand you. type /help for assistance."))
 
 (defprotocol CommandService

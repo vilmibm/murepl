@@ -9,8 +9,8 @@
 (use-fixtures :each (fn [f] (reset-db! test-db) (f)))
 (use-fixtures :once validate-schemas)
 
-(defmacro with-swap [called-atom fn-symbol & body]
-  `(with-redefs [~fn-symbol (fn [& _#] (swap! ~called-atom (constantly true)))]
+(defmacro with-swap [called-atom return fn-symbol & body]
+  `(with-redefs [~fn-symbol (fn [& _#] (swap! ~called-atom (constantly true)) ~return)]
      (do ~@body)
      (swap! ~called-atom (constantly false))))
 
@@ -20,24 +20,29 @@
   (testing "when dispatching"
     (let [called (atom false)]
       (testing "and the command is"
+        (testing "logout it is called"
+          (doseq [logout-cmd ["/logout" "/exit" "/quit"]]
+            (with-swap called "foo" murepl.commands/logout!
+              (dispatch* nil test-db nil nil logout-cmd)
+              (is @called))))
         (testing "new it is called"
-          (with-swap called murepl.commands/new-user!
+          (with-swap called "foo" murepl.commands/new-user!
             (dispatch* nil test-db nil nil "/new pukey puke")
             (is @called)))
         (testing "login it is called"
-          (with-swap called murepl.commands/login!
+          (with-swap called "foo" murepl.commands/login!
             (dispatch* nil test-db nil nil "/login puker puke")
             (is @called)))
         (testing "change-password it is called"
-          (with-swap called murepl.commands/change-password!
+          (with-swap called "foo" murepl.commands/change-password!
             (dispatch* nil test-db borges nil "/change-password foobarbaz")
             (is @called)))
         (testing "set-info it is called"
-          (with-swap called murepl.commands/set-info!
+          (with-swap called "foo" murepl.commands/set-info!
             (dispatch* nil test-db borges nil "/set foobar baz")
             (is @called)))
         (testing "help it is called"
-          (with-swap called murepl.commands/help
+          (with-swap called "foo" murepl.commands/help
             (dispatch* nil test-db nil nil "/help")
             (is @called)))))
     (testing "and the command is not found"
@@ -93,7 +98,7 @@
 
     (testing "and the command is not malformed"
       (testing "and stuff is added"
-        (let [command-str "/set-info \"favorite color\" \"yellow\""
+        (let [command-str "/set \"favorite color\" \"yellow\""
               result (dispatch* nil test-db borges nil command-str)
               db-result (u/lookup borges test-db)]
           (testing "the user's info is updated"
@@ -102,7 +107,7 @@
             (is (re-find #"updated.*favorite color.*yellow" result)))))
 
       (testing "and existing stuff is changed"
-        (let [command-str "/set-info \"favorite color\" \"red\""
+        (let [command-str "/set \"favorite color\" \"red\""
               result (dispatch* nil test-db borges nil command-str)
               db-result (u/lookup borges test-db)]
           (testing "the user's info is updated"
@@ -111,7 +116,7 @@
             (is (re-find #"updated.*favorite color.*red" result)))))
 
       (testing "and stuff is removed"
-        (let [command-str "/set-info \"favorite color\" \"\""
+        (let [command-str "/set \"favorite color\" \"\""
               result (dispatch* nil test-db borges nil command-str)
               db-result (u/lookup borges test-db)]
           (testing "the user's info is updated"
@@ -120,10 +125,10 @@
             (is (re-find #"removed.*favorite color" result))))))
 
     (testing "and the command is malformed"
-      (let [command-str "/set-info foo bar"
+      (let [command-str "/set foo bar"
             result (dispatch* nil test-db borges nil command-str)]
         (testing "an appropriate message is returned"
-          (is (re-find #"try again.*set-info" result)))))))
+          (is (re-find #"try again.*set" result)))))))
 
 (deftest login-test
   (testing "when logging in"
@@ -159,11 +164,11 @@
         (testing "an appropriate message is returned"
           (is (re-find #"try again with something" result)))))))
 
-;; TODO
-(deftest logout-test
-  (testing "when logging out"
-    (testing "but there is no user registered to the channel")
-    (testing "and there is a user registered to the channel"
-      (testing "the user is unregistered"))))
+;; TODO test this against a TK
+#_(deftest logout-test
+    (testing "when logging out"
+      (testing "but there is no user registered to the channel")
+      (testing "and there is a user registered to the channel"
+        (testing "the user is unregistered"))))
 
 (deftest help-test)
