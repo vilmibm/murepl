@@ -128,8 +128,10 @@
         code (read-string command-str)]
     (try
       (str (sb code))
-      (catch Exception e
-        (str e)))))
+      (catch java.lang.SecurityException e
+        "you tried to hack the gibson -_-")
+      (catch java.util.concurrent.ExecutionException e
+        (str (.getCause e))))))
 
 (s/defn dispatch* :- s/Str
   [comm-svc ;; TODO

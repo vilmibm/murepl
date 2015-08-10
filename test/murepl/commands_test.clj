@@ -203,6 +203,17 @@
           (let [result (dispatch "(+ 1 1)")]
             (testing "result is returned"
               (is (= "2" result)))))
+
+        (testing "and code attempts to access database"
+          (let [result (dispatch (format "(murepl.user/lookup %s %s)"
+                                         (pr-str borges)
+                                         (pr-str test-db)))]
+            (testing "an appropriate error is returned"
+              (is (re-find #"hack the gibson" result)))))
+
         (testing "and code is gibberish"
           (let [result (dispatch "(re-find #\"aosd98d21dj\")")]
-            (println result)))))))
+            (testing "we see appropriate error"
+              (is (re-find #"ClassCastException" result)))
+            (testing "we don't see the outer execution exception"
+              (is (not (re-find #"ExecutionException" result))))))))))
