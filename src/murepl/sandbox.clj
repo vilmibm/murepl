@@ -1,8 +1,9 @@
 (ns murepl.sandbox
   (:require [clojail.core :as clojail]
-            [clojail.testers :as tst]))
+            [clojail.testers :as tst]
+            [murepl.namespaces :refer [user->ns]]))
 
-(defn sandbox []
+(defn sandbox [user]
   (let [tester [(tst/blacklist-objects [clojure.lang.Compiler clojure.lang.Ref clojure.lang.Reflector
                                         clojure.lang.Namespace clojure.lang.Var clojure.lang.RT
                                         java.io.ObjectInputStream])
@@ -24,4 +25,4 @@
                                       ])
                 (tst/blanket "clojail")
                 (tst/blanket "clj-pgp")]]
-    (clojail/sandbox tester)))
+    (clojail/sandbox tester :namespace (user->ns user))))

@@ -4,6 +4,7 @@
   (:require [schema.core :as s]
             [puppetlabs.trapperkeeper.services :refer [defservice get-service]]
             [murepl.storage :refer [Dbs]]
+            [murepl.sandbox :refer [sandbox]]
             [murepl.comms :as comm]
             [murepl.user :refer [User] :as u]))
 
@@ -14,8 +15,6 @@
 ;; help
 
 ;; TODO allow liberal whitespace in command strings
-
-(defn evaluate [db user code] nil)
 
 (s/defn login! :- s/Str
   [comm-svc :- s/Any ;; TODO
@@ -94,6 +93,7 @@
       :else
       "try again with something like /set \"favorite color\" \"yellow\"")))
 
+;; TODO handle nil user
 (s/defn change-password! :- s/Str
   [db :- Dbs user :- User command-str :- s/Str]
   (let [[_ pw] (re-matches #"^\/change-password \"([^\"]+?)\"" command-str)]
@@ -107,20 +107,48 @@
 (s/defn help [db :- Dbs]
   nil)
 
-(s/defn ^:always-validate dispatch* :- s/Str
+(defn slash-command?
+  "TODO"
+  [command-str]
+  (= \/ (first command-str)))
+
+;; comment we now have code we need to sandbox eval against the user's namespace.
+;; can create a new, random-name namespace that stays associated with the user
+;; over the course of the server's life. if server restarts, context is lost;
+;; but seems easiest to start there and then attempt serialization later.
+
+(s/defn sb-eval
+  "TODO"
+  [comm-svc
+   db :- Dbs
+   user :- User
+   channel
+   command-str :- s/Str]
+  (let [sb (sandbox user)
+        code (read-string command-str)]
+    (try
+      (str (sb code))
+      (catch Exception e
+        (str e)))))
+
+(s/defn dispatch* :- s/Str
   [comm-svc ;; TODO
    db :- Dbs
    user :- (s/maybe User)
    channel ;; TODO
    command-str :- s/Str]
-  (condp re-find command-str
-    #"^\/help" (help db)
-    #"^\/new " (new-user! db command-str)
-    #"^\/change-password " (change-password! db user command-str)
-    #"^\/(exit|logout|quit)" (logout! comm-svc db user)
-    #"^\/login " (login! comm-svc db channel command-str)
-    #"^\/set " (set-info! db user command-str)
-    "oops, i didn't understand you. type /help for assistance."))
+  (if-not (slash-command? command-str)
+    (if (nil? user)
+      "please log in."
+      (sb-eval comm-svc db user channel command-str))
+    (condp re-find command-str
+      #"^\/help" (help db)
+      #"^\/new " (new-user! db command-str)
+      #"^\/change-password " (change-password! db user command-str)
+      #"^\/(exit|logout|quit)" (logout! comm-svc db user)
+      #"^\/login " (login! comm-svc db channel command-str)
+      #"^\/set " (set-info! db user command-str)
+      "oops, i didn't understand you. type /help for assistance.")))
 
 (defprotocol CommandService
   (dispatch [this db channel command-str]))

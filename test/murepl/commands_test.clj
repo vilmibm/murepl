@@ -188,3 +188,21 @@
               (is (re-find #"logged out" result)))))))))
 
 (deftest help-test)
+
+(deftest eval-test
+  (testing "when sending code"
+    (u/new! borges test-db)
+    (testing "and not logged in"
+      (testing "appropriate message is returned"
+        (let [result (dispatch* nil test-db nil "fake channel" "(+ 1 1)")]
+          (is (re-find #"please log in" result)))))
+
+    (testing "and logged in"
+      (let [dispatch (partial dispatch* nil test-db borges "fake channel")]
+        (testing "and code is understandable"
+          (let [result (dispatch "(+ 1 1)")]
+            (testing "result is returned"
+              (is (= "2" result)))))
+        (testing "and code is gibberish"
+          (let [result (dispatch "(re-find #\"aosd98d21dj\")")]
+            (println result)))))))
