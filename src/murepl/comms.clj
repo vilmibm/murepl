@@ -37,9 +37,12 @@
 
   (unregister! [this user]
                (let [{:keys [users->channels]} (service-context this)]
-                 (dosync
-                  (alter users->channels dissoc (:name user))
-                  (log/infof "unregistered channel for %s" (:name user)))))
+                 (if-not (contains? @users->channels (:name user))
+                   false
+                   (dosync
+                    (alter users->channels dissoc (:name user))
+                    (log/infof "unregistered channel for %s" (:name user))
+                    true))))
 
   (channel->user [this channel]
                  (let [{:keys [users->channels]} (service-context this)

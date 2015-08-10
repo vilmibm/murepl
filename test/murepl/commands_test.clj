@@ -1,10 +1,14 @@
 (ns murepl.commands-test
-  (:require [murepl.commands :refer :all]
-            [murepl.comms :as comm]
+  (:require [clojure.test :refer :all]
+            [murepl.commands :refer :all]
+            [murepl.comms :refer [comm-service] :as comm]
+            [murepl.server :refer [web-service]]
             [murepl.testutils :refer [test-db reset-db!]]
+            [murepl.async-service :refer [async-service]]
             [murepl.user :as u]
-            [schema.test :refer [validate-schemas]]
-            [clojure.test :refer :all]))
+            [puppetlabs.trapperkeeper.app :as tka]
+            [puppetlabs.trapperkeeper.testutils.bootstrap :refer [with-app-with-config]]
+            [schema.test :refer [validate-schemas]]))
 
 (use-fixtures :each (fn [f] (reset-db! test-db) (f)))
 (use-fixtures :once validate-schemas)
@@ -164,11 +168,23 @@
         (testing "an appropriate message is returned"
           (is (re-find #"try again with something" result)))))))
 
-;; TODO test this against a TK
-#_(deftest logout-test
-    (testing "when logging out"
-      (testing "but there is no user registered to the channel")
-      (testing "and there is a user registered to the channel"
-        (testing "the user is unregistered"))))
+(deftest logout-test
+  (with-app-with-config app
+    [command-service comm-service web-service async-service]
+    {}
+    (let [logout-str "/logout"
+          fake-channel "fake channel"
+          comm-svc (tka/get-service app :CommService)]
+      (testing "when logging out"
+        (u/new! borges test-db)
+        (testing "but there is no user registered to the channel"
+          (let [result (dispatch* comm-svc test-db nil fake-channel logout-str)]
+            (testing "an appropriate message is returned"
+              (is (re-find #"no active" result)))))
+        (testing "and there is a user registered to the channel"
+          (comm/register! comm-svc borges fake-channel)
+          (let [result (dispatch* comm-svc test-db borges fake-channel logout-str)]
+            (testing "the user is unregistered"
+              (is (re-find #"logged out" result)))))))))
 
 (deftest help-test)

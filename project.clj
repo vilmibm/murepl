@@ -6,8 +6,10 @@
   :main puppetlabs.trapperkeeper.main
   :min-lein-version "2.0.0"
   :repl-options {:init-ns user}
-  :profiles {:dev {:source-paths ["dev"]}}
-  :dependencies [[org.clojure/clojure "1.6.0"]
+  :profiles {:dev {:source-paths ["dev"]
+                   :dependencies [[puppetlabs/trapperkeeper "1.1.1" :classifier "test"]
+                                  [puppetlabs/kitchensink "1.1.0" :classifier "test"]]}}
+  :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/tools.nrepl "0.2.10"]
                  [org.clojure/java.jdbc "0.3.7"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]

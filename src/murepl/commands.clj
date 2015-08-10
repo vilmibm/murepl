@@ -46,9 +46,12 @@
 (s/defn logout! :- s/Str
   [comm-svc
    db :- Dbs
-   user :- User]
-  (comm/unregister! comm-svc user)
-  "you are logged out.")
+   user :- (s/maybe User)]
+  (if (nil? user)
+    "no active session."
+    (if-let [logged-out (comm/unregister! comm-svc user)]
+      "you are logged out."
+      "logout failed. is there an active session?")))
 
 ;; TODO use meta table to store strings for all of the messages / default description / etc
 
