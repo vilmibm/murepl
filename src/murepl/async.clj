@@ -9,7 +9,7 @@
 
 (defn go! [channels]
   (go
-    (while true
+    #_(while true
       (println (<! (:notifications channels)))))
 
     (go

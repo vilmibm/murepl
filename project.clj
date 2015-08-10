@@ -1,4 +1,5 @@
 (defproject murepl "1.0.0-SNAPSHOT"
+  :pedantic? :abort
   :description "Framework for multi user repl driven applications."
   :url "http://github.com/nathanielksmith/murepl"
   :license {:name "GPL v3"
@@ -18,7 +19,7 @@
                  [cheshire "5.5.0"]
                  [clojail "1.0.6"]
                  [http-kit "2.1.18"]
-                 [ring "1.4.0-RC1"]
+                 [ring "1.4.0" :exclusions [joda-time org.clojure/tools.reader clj-time]]
                  [puppetlabs/kitchensink "1.1.0"]
                  [puppetlabs/trapperkeeper "1.1.1"]
-                 [puppetlabs/comidi "0.1.3"]])
+                 [puppetlabs/comidi "0.1.3" :exclusions [org.clojure/tools.macro clj-time]]])
