@@ -1,6 +1,6 @@
 (ns murepl.world
   (:require [schema.core :as s]
-            [puppetlabs.trapperkeeper.services :refer [defservice get-service]]
+            [puppetlabs.trapperkeeper.services :refer [defservice get-service service-context]]
             [murepl.user :refer [User]]))
 
 (def Room {:name s/Str
@@ -9,33 +9,42 @@
            (s/optional-key :id) java.util.UUID})
 
 ;; TODO rooms will likely become a map of various state refs.
+;; TODO so; user data may have been updated in DB. Move to just storing user
+;; names and then hydrating them (but where?)
 
 (s/defn create-room!* :- Room
   "TODO"
-  [this
-   state
+  [{:keys [rooms room->users]}
    room :- Room]
-  (comment generate id, add to rooms, return new room with id added)
-  nil)
+  (let [id (java.util.UUID/randomUUID)
+        new-room (assoc room :id id)]
+    (dosync
+     (alter rooms assoc id new-room)
+     (alter room->users assoc id []))
+    new-room))
 
 (s/defn place-user!* :- Room
   "TODO"
-  [this
-   state
+  [{:keys [room->users user->room]}
    user :- User
    room :- Room]
-  (comment update state stuff as needed, return room)
-  room)
+  (let [old-user-room (@user->room (:name user))
+        user!= (fn [u]
+                 (println "COMPARING " (:name user) (:name u))
+                 (not= (:name user) (:name u)))
+        forget-user (partial filter user!=)
+        remember-user #(conj % user)]
+    (dosync
+     (alter user->room assoc (:name user) (:id room))
+     (alter room->users update (:id old-user-room) forget-user)
+     (alter room->users update (:id room) remember-user))
+    room))
 
 (s/defn users-in* :- [User]
   "TODO"
-  [this
-   state
+  [{:keys [room->users]}
    room :- Room]
-
-  (comment figure out what users are in this room, return list of users)
-
-  [])
+  (@room->users (:id room)))
 
 (defprotocol WorldService
   "This service manages the state of the actual game world: what rooms exist,
@@ -44,19 +53,26 @@
   (place-user! [this user room])
   (users-in [this room]))
 
+;; TODO periodic, background thread serialization of rooms DS
 (defservice world-service
   WorldService
   [AsyncService]
   (init [this ctx]
-        (comment make a ref for world state)
         (assoc ctx
+               ;; TODO more refs?
+               :user->room (ref {})
+               :rooms (ref {})
+               :room->users (ref {})
                :async-svc (get-service this :AsyncService)))
 
   (create-room! [this room]
-                (comment extract stuff from ctx / call *))
+                (let [state (service-context this)]
+                  (create-room!* state room)))
 
   (place-user! [this user room]
-               (comment extract stuff from ctx / call *))
+               (let [state (service-context this)]
+                 (place-user!* state user room)))
 
   (users-in [this room]
-            (comment extract stuff from ctx / call *)))
+            (let [state (service-context this)]
+              (users-in* state room))))

@@ -8,6 +8,7 @@
    (s/optional-key  :password) s/Str
    ;; TODO figure out actual date/time type
    (s/optional-key :lastseen) (s/maybe s/Str)
+   ;; TODO don't do this type thing
    :data (type {})})
 
 (def SearchUser
