@@ -4,11 +4,11 @@
             [murepl.comms :refer [comm-service]]
             [murepl.server :refer [web-service]]
             [murepl.world :refer [world-service]]
-            [murepl.testutils :refer [test-db reset-db!]]
+            [murepl.commands :refer [command-service]]
             [murepl.async-service :refer [async-service]]
             [clojure.java.jdbc :as jdbc]))
 
-(def services [comm-service web-service async-service world-service])
+(def services [comm-service web-service async-service world-service command-service])
 
 (def test-db {:subprotocol "postgresql"
               :subname "//localhost:5432/murepl_test"

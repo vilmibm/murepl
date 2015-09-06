@@ -20,23 +20,22 @@
         new-room (assoc room :id id)]
     (dosync
      (alter rooms assoc id new-room)
-     (alter room->users assoc id []))
+     (alter room->users assoc id #{}))
     new-room))
 
 (s/defn place-user!* :- Room
   "TODO"
   [{:keys [room->users user->room]}
-   user :- User
+   {username :name} :- User
    room :- Room]
-  (let [old-user-room (@user->room (:name user))
-        user!= (fn [u]
-                 (println "COMPARING " (:name user) (:name u))
-                 (not= (:name user) (:name u)))
-        forget-user (partial filter user!=)
-        remember-user #(conj % user)]
+  (let [old-user-room-id (@user->room username)
+        user!= (fn [un] (not= username un))
+        forget-user (comp set (partial filter user!=))
+        remember-user #(conj % username)]
     (dosync
-     (alter user->room assoc (:name user) (:id room))
-     (alter room->users update (:id old-user-room) forget-user)
+     (alter user->room assoc username (:id room))
+     (when-not (nil? old-user-room-id)
+       (alter room->users update old-user-room-id forget-user))
      (alter room->users update (:id room) remember-user))
     room))
 
